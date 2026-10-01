@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Editor de vagas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 24px;
+        }
+
+        .controles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        input,
+        button {
+            padding: 8px;
+        }
+
+        #mensagem {
+            min-height: 24px;
+        }
+
+        #imagem {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #eee;
+            touch-action: none;
+        }
+
+        #area {
+            max-width: 900px;
+        }
+
+        .vaga {
+            fill: #00a86b55;
+            stroke: #00804f;
+            stroke-width: 2;
+            cursor: pointer;
+        }
+
+        .vaga.selecionada {
+            fill: #0088ff55;
+            stroke: #0066cc;
+        }
+
+        .rascunho {
+            fill: #ffb00055;
+            stroke: #d08000;
+            stroke-width: 2;
+        }
+
+        .ponto {
+            fill: #fff;
+            stroke: #0066cc;
+            stroke-width: 2;
+            cursor: grab;
+        }
+
+        .ponto:active {
+            cursor: grabbing;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Editor de vagas — teste</h1>
+    <div class="controles">
+        <input id="mapaID" value="estacionamento-01" aria-label="ID do mapa">
+        <button id="carregar">Carregar mapa</button>
+        <button id="nova">Nova vaga</button>
+        <button id="concluir">Concluir vaga</button>
+        <button id="cancelar">Cancelar desenho</button>
+        <button id="excluir">Excluir selecionada</button>
+        <button id="salvar">Salvar vagas</button>
+    </div>
+    <p id="mensagem"></p>
+    <div id="area">
+        <svg id="imagem" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+
+    <script>
+        const svg = document.getElementById("imagem");
+        const mensagem = document.getElementById("mensagem");
+        const mapaID = document.getElementById("mapaID");
+        const ns = "http://www.w3.org/2000/svg";
+        let mapa = null;
+        let vagas = [];
+        let rascunho = null;
+        let selecionada = null;
+        let arrastando = null;
+        let alterado = false;
+
+        function avisar(texto) {
+            mensagem.textContent = texto;
+        }
+
+        function pontoDoEvento(evento) {
+            const matriz = svg.getScreenCTM();
+            if (!matriz || !mapa) return null;
+            const ponto = new DOMPoint(evento.clientX, evento.clientY).matrixTransform(matriz.inverse());
+
+            return {
+                X: Math.max(0, Math.min(1, ponto.x / mapa.Largura)),
+                Y: Math.max(0, Math.min(1, ponto.y / mapa.Altura))
+            };
+        }
+
+        function coordenadas(pontos) {
+            return pontos.map(ponto => `${ponto.X * mapa.Largura},${ponto.Y * mapa.Altura}`).join(" ");
+        }
+
+        function renderizar() {
+            if (!mapa) return;
+            svg.replaceChildren();
+            svg.setAttribute("viewBox", `0 0 ${mapa.Largura} ${mapa.Altura}`);
+            svg.style.aspectRatio = `${mapa.Largura} / ${mapa.Altura}`;
+
+            const imagem = document.createElementNS(ns, "image");
+            imagem.setAttribute("href", `/imagens/${encodeURIComponent(mapa.Imagem)}`);
+            imagem.setAttribute("width", mapa.Largura);
+            imagem.setAttribute("height", mapa.Altura);
+            imagem.setAttribute("pointer-events", "none");
+            svg.append(imagem);
+
+            vagas.forEach(vaga => {
+                const poligono = document.createElementNS(ns, "polygon");
+                poligono.setAttribute("points", coordenadas(vaga.Pontos));
+                poligono.setAttribute("class", vaga.ID === selecionada ? "vaga selecionada" : "vaga");
+                poligono.addEventListener("pointerdown", evento => {
+                    if (rascunho) return;
+                    evento.stopPropagation();
+                    selecionada = vaga.ID;
+                    renderizar();
+                    avisar(`${vaga.Nome} selecionada. Arraste os pontos para ajustar.`);
+                });
+                svg.append(poligono);
+            });
+
+            if (rascunho?.length) {
+                const desenho = document.createElementNS(ns, rascunho.length >= 3 ? "polygon" : "polyline");
+                desenho.setAttribute("points", coordenadas(rascunho));
+                desenho.setAttribute("class", "rascunho");
+                svg.append(desenho);
+            }
+
+            const vagaSelecionada = vagas.find(vaga => vaga.ID === selecionada);
+            if (vagaSelecionada && !rascunho) {
+                vagaSelecionada.Pontos.forEach((ponto, indice) => {
+                    const marcador = document.createElementNS(ns, "circle");
+                    marcador.setAttribute("cx", ponto.X * mapa.Largura);
+                    marcador.setAttribute("cy", ponto.Y * mapa.Altura);
+                    marcador.setAttribute("r", 6);
+                    marcador.setAttribute("class", "ponto");
+                    marcador.addEventListener("pointerdown", evento => {
+                        evento.stopPropagation();
+                        arrastando = { ID: vagaSelecionada.ID, indice };
+                        svg.setPointerCapture(evento.pointerId);
+                    });
+                    svg.append(marcador);
+                });
+            }
+        }
+
+        async function carregar() {
+            const ID = mapaID.value.trim();
+            if (!ID) return avisar("Informe o ID do mapa.");
+            if (alterado && !confirm("Descartar alterações não salvas?")) return;
+
+            try {
+                const resposta = await fetch(`/mapas/${encodeURIComponent(ID)}`);
+                const resultado = await resposta.json();
+                if (!resposta.ok || !resultado.success) throw new Error(resultado.error || "Erro ao carregar mapa.");
+
+                mapa = resultado.data;
+                vagas = structuredClone(mapa.Vagas);
+                rascunho = null;
+                selecionada = null;
+                arrastando = null;
+                alterado = false;
+                renderizar();
+                avisar(`${mapa.Nome}: ${vagas.length} vaga(s). Clique em "Nova vaga" para desenhar.`);
+            } catch (erro) {
+                avisar(erro.message);
+            }
+        }
+
+        svg.addEventListener("pointerdown", evento => {
+            if (!mapa || !rascunho) return;
+            const ponto = pontoDoEvento(evento);
+            if (!ponto) return;
+            rascunho.push(ponto);
+            renderizar();
+            avisar(`${rascunho.length} ponto(s). Clique nos cantos e depois em "Concluir vaga".`);
+        });
+
+        svg.addEventListener("pointermove", evento => {
+            if (!arrastando) return;
+            const vaga = vagas.find(item => item.ID === arrastando.ID);
+            const ponto = pontoDoEvento(evento);
+            if (!vaga || !ponto) return;
+            vaga.Pontos[arrastando.indice] = ponto;
+            alterado = true;
+            renderizar();
+        });
+
+        function pararArraste() {
+            arrastando = null;
+        }
+
+        svg.addEventListener("pointerup", pararArraste);
+        svg.addEventListener("pointercancel", pararArraste);
+
+        document.getElementById("carregar").addEventListener("click", carregar);
+
+        document.getElementById("nova").addEventListener("click", () => {
+            if (!mapa) return avisar("Carregue um mapa primeiro.");
+            rascunho = [];
+            selecionada = null;
+            renderizar();
+            avisar("Clique nos cantos da vaga e depois em Concluir vaga.");
+        });
+
+        document.getElementById("concluir").addEventListener("click", () => {
+            if (!rascunho || rascunho.length < 3) return avisar("Desenhe pelo menos três pontos.");
+            const Nome = prompt("Nome da vaga:", `A${vagas.length + 1}`);
+            if (!Nome?.trim()) return avisar("Informe um nome para concluir.");
+
+            const vaga = { ID: `vaga-${crypto.randomUUID()}`, Nome: Nome.trim(), Pontos: rascunho };
+            vagas.push(vaga);
+            rascunho = null;
+            selecionada = vaga.ID;
+            alterado = true;
+            renderizar();
+            avisar(`${vaga.Nome} criada localmente. Clique em Salvar vagas para persistir.`);
+        });
+
+        document.getElementById("cancelar").addEventListener("click", () => {
+            rascunho = null;
+            renderizar();
+            avisar("Desenho cancelado.");
+        });
+
+        document.getElementById("excluir").addEventListener("click", () => {
+            if (!selecionada) return avisar("Selecione uma vaga primeiro.");
+            vagas = vagas.filter(vaga => vaga.ID !== selecionada);
+            selecionada = null;
+            alterado = true;
+            renderizar();
+            avisar("Vaga excluída localmente. Clique em Salvar vagas para persistir.");
+        });
+
+        document.getElementById("salvar").addEventListener("click", async () => {
+            if (!mapa) return avisar("Carregue um mapa primeiro.");
+            if (rascunho) return avisar("Conclua ou cancele o desenho antes de salvar.");
+
+            try {
+                const resposta = await fetch(`/mapas/${encodeURIComponent(mapa.ID)}/vagas`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ Vagas: vagas })
+                });
+                const resultado = await resposta.json();
+                if (!resposta.ok || !resultado.success) throw new Error(resultado.error || "Erro ao salvar vagas.");
+                mapa = resultado.data;
+                vagas = structuredClone(mapa.Vagas);
+                alterado = false;
+                avisar(`${vagas.length} vaga(s) salva(s). Recarregue a página para conferir.`);
+            } catch (erro) {
+                avisar(erro.message);
+            }
+        });
+
+        carregar();
+    </script>
+</body>
+
+</html>
