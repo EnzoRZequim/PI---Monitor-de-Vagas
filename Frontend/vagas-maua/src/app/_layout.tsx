@@ -21,7 +21,6 @@ export default function RootLayout() {
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: cores.fundo } }}>
         <Stack.Screen name="index" options={{ title: 'Vagas Maua' }} />
-        <Stack.Screen name="parceiros" options={{ title: 'Nossos parceiros | Vagas Maua' }} />
       </Stack>
     </>
   );

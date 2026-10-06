@@ -27,9 +27,6 @@
       "expo-status-bar",
       "expo-font"
     ],
-    "scheme": "vagasmaua",
-    "experiments": {
-      "typedRoutes": true
-    }
+    "scheme": "vagasmaua"
   }
 }

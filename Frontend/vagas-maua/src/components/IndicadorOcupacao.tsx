@@ -8,16 +8,20 @@ const NIVEIS = {
   cheio: { fundo: '#E46B6B', borda: '#B04444' },
 };
 
-// Até 50% ocupado: verde; até 80%: amarelo; acima disso: vermelho
-function nivel(ocupadas: number, total: number) {
-  const taxa = total > 0 ? ocupadas / total : 1;
-  if (taxa <= 0.5) return NIVEIS.livre;
+export function taxaDeOcupacao(ocupadas: number, total: number) {
+  return total > 0 ? Math.min(ocupadas / total, 1) : 1;
+}
+
+// Abaixo de 50% ocupado: verde; até 80%: amarelo; acima disso: vermelho
+export function corDaOcupacao(ocupadas: number, total: number) {
+  const taxa = taxaDeOcupacao(ocupadas, total);
+  if (taxa < 0.5) return NIVEIS.livre;
   if (taxa <= 0.8) return NIVEIS.moderado;
   return NIVEIS.cheio;
 }
 
 export function IndicadorOcupacao({ ocupadas, total }: { ocupadas: number; total: number }) {
-  const cor = nivel(ocupadas, total);
+  const cor = corDaOcupacao(ocupadas, total);
 
   return (
     <View

@@ -1,13 +1,35 @@
-import { Link, router } from 'expo-router';
+import { Link, router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { BotaoPrimario } from '@/components/BotaoPrimario';
 import { Cabecalho } from '@/components/Cabecalho';
 import { Logo } from '@/components/Logo';
-import { ultimoLocalVisitado } from '@/data/parceiros';
+import { buscarCampus, buscarParceiro, type Campus } from '@/dados/parceiros';
+import { lerUltimoLocal } from '@/dados/ultimoLocal';
+import { rotaDoCampus } from '@/rotas';
 import { cores, fontes, LARGURA_CONTEUDO } from '@/theme';
 
+type UltimoVisitado = { parceiroId: string; campus: Campus };
+
 export default function TelaInicial() {
+  const [ultimo, setUltimo] = useState<UltimoVisitado | null>(null);
+
+  // Relê ao voltar para esta tela, pois o usuário pode ter aberto outro campus
+  useFocusEffect(
+    useCallback(() => {
+      let ativo = true;
+      lerUltimoLocal().then((local) => {
+        // Ignora locais salvos que não existem mais na lista de parceiros
+        const campus = local && buscarCampus(buscarParceiro(local.parceiroId), local.campusId);
+        if (ativo) setUltimo(local && campus ? { parceiroId: local.parceiroId, campus } : null);
+      });
+      return () => {
+        ativo = false;
+      };
+    }, []),
+  );
+
   return (
     <View style={styles.tela}>
       <Cabecalho mostrarAcoesParceiro />
@@ -19,7 +41,7 @@ export default function TelaInicial() {
           <View style={styles.texto}>
             <Text style={styles.titulo}>Vagas Maua</Text>
             <Text style={styles.descricao}>
-              Em nosso aplicativo, você tem acesso ao mapa do estacionamento de todos os nossos
+              Aqui você tem acesso ao mapa do estacionamento de todos os nossos
               parceiros! Evite filas desnecessárias, voltas pelo estacionamento e atraso nos
               compromissos.
             </Text>
@@ -32,12 +54,17 @@ export default function TelaInicial() {
                 onPress={() => router.push('/parceiros')}
               />
 
-              <View style={styles.ultimoLocal}>
-                <Text style={styles.ultimoLocalRotulo}>Último local visitado:</Text>
-                <Link href="/parceiros" style={styles.ultimoLocalLink}>
-                  {ultimoLocalVisitado}
-                </Link>
-              </View>
+              {ultimo && (
+                <View style={styles.ultimoLocal}>
+                  <Text style={styles.ultimoLocalRotulo}>Último local visitado:</Text>
+                  <Link
+                    href={rotaDoCampus(ultimo.parceiroId, ultimo.campus.id)}
+                    style={styles.ultimoLocalLink}
+                  >
+                    {ultimo.campus.nome}
+                  </Link>
+                </View>
+              )}
             </View>
           </View>
         </View>
