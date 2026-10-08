@@ -4,7 +4,7 @@ import { Router } from "express";
 import multer = require("multer");
 import sharp = require("sharp");
 import { z } from "zod";
-import { badRequest, conflict, created, internalError, notFound, ok, sendResponse, updated } from "../commun/ResponseHelper";
+import { badRequest, conflict, created, internalError, notFound, ok, sendResponse, updated } from "../common/ResponseHelper";
 import { buscarMapa, criarMapa, salvarMapa } from "../services/MapaStorage";
 import type { Mapa } from "../types/Mapa";
 

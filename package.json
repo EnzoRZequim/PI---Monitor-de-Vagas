@@ -1,14 +1,31 @@
 {
-  "name": "codigo",
+  "name": "pi-monitor-de-vagas",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "private": true,
+  "description": "Sistema de mapeamento e monitoramento de vagas de estacionamento.",
+  "main": "dist/backend/src/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsx watch backend/src/server.ts",
+    "build": "tsc",
+    "start": "node dist/backend/src/server.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "estacionamento",
+    "monitoramento",
+    "vagas",
+    "visao-computacional",
+    "typescript"
+  ],
+  "author": "Enzo R. Zequim",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EnzoRZequim/PI---Monitor-de-Vagas.git"
+  },
+  "bugs": {
+    "url": "https://github.com/EnzoRZequim/PI---Monitor-de-Vagas/issues"
+  },
+  "homepage": "https://github.com/EnzoRZequim/PI---Monitor-de-Vagas#readme",
   "type": "commonjs",
   "dependencies": {
     "cors": "^2.8.6",

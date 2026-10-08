@@ -1,3 +1,19 @@
-data/
+# Dependências instaladas pelo NPM
 node_modules/
+
+# Arquivos JavaScript e declarações gerados pelo TypeScript
+dist/
+
+# Dados de execução: imagens, mapas, resultados e arquivos temporários
+data/
+
+# Dataset local utilizado em testes e estudos
 PKLot.v2-640.coco/
+
+# Variáveis locais e possíveis segredos
+.env
+.env.*
+!.env.example
+
+# Arquivos de log
+*.log
