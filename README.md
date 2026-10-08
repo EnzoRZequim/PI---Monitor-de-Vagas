@@ -1,124 +1,187 @@
-# APP Vaga Livre 🅿
+# APP Vaga Livre 🅿️
 
 **Sua vaga, sem voltas.**
 
-O APP Vaga Livre é um projeto de estacionamento inteligente. A proposta é usar imagens de câmeras para identificar vagas livres e apresentar essa informação aos motoristas em uma interface visual, sem exigir um sensor dedicado em cada vaga.
+O **APP Vaga Livre** é um projeto de estacionamento inteligente que utiliza imagens de câmeras para identificar vagas livres e ocupadas, sem exigir sensores dedicados em cada vaga.
 
 ## Estado atual
 
-A etapa implementada até agora é o **mapeamento manual das vagas de uma imagem de referência**:
+A etapa implementada é o **mapeamento manual de vagas em uma imagem de referência**.
 
-- O backend recebe uma imagem e cria um mapa vazio.
-- Uma página provisória exibe a imagem e permite desenhar, ajustar e excluir polígonos de vagas.
-- Os pontos são salvos com coordenadas normalizadas entre 0 e 1.
-- Os mapas ficam em arquivos JSON e as imagens ficam armazenadas localmente.
+O sistema atualmente permite:
 
-A classificação de vagas como livres ou ocupadas, a atualização em tempo real e a interface definitiva **ainda não foram implementadas**. O editor atual é uma ferramenta de teste; a equipe de frontend desenvolverá a interface definitiva separadamente.
+- Cadastrar uma imagem JPG ou PNG de um estacionamento.
+- Criar um mapa associado à imagem cadastrada.
+- Exibir a imagem em um editor web provisório.
+- Criar, ajustar e excluir vagas sobre a imagem.
+- Representar cada vaga com um polígono de exatamente quatro pontos.
+- Salvar as coordenadas dos pontos normalizadas entre 0 e 1.
+- Armazenar imagens e mapas localmente em arquivos JSON.
+
+A detecção de carros, a classificação de vagas como livres ou ocupadas, a atualização em tempo real e a interface definitiva ainda não foram implementadas.
+
+## Tecnologias
+
+- Node.js
+- TypeScript
+- Express
+- Multer
+- Sharp
+- Zod
+- HTML, CSS e JavaScript puro
 
 ## Pré-requisitos
 
-- Node.js e npm instalados.
-- Uma imagem JPG ou PNG de um estacionamento para cadastrar como referência.
-- Acesso a um terminal na raiz do projeto.
+- [Node.js](https://nodejs.org/) e NPM instalados.
+- Uma imagem JPG ou PNG de estacionamento para criar um mapa.
+- Terminal aberto na raiz do projeto.
 
-Não é necessário instalar PostgreSQL nesta etapa.
+Não é necessário instalar banco de dados nesta etapa.
 
-## Instalação
+## Instalação e execução
 
-Clone o repositório ou baixe seus arquivos. No terminal, entre na pasta raiz do projeto — a pasta que contém `package.json` — e instale as dependências:
+Na raiz do projeto, instale as dependências:
 
 ```bat
 npm install
 ```
 
-Confira se o TypeScript não aponta erros:
+Inicie o backend em modo de desenvolvimento:
 
 ```bat
-npx tsc --noEmit
+npm run dev
 ```
 
-Inicie o backend a partir da **raiz do projeto**:
-
-```bat
-npx tsx src/server.ts
-```
-
-Deixe esse terminal aberto. Por padrão, a API ficará em `http://localhost:3000`. Para verificar se está respondendo, abra:
+O servidor ficará disponível em:
 
 ```text
-http://localhost:3000/saude
+API:       http://localhost:3000
+Editor:    http://localhost:3000/editor
+Status:    http://localhost:3000/saude
 ```
 
-A resposta esperada é `{"status":"ok"}`. Para parar o servidor, pressione `Ctrl+C`.
+Para interromper o servidor, pressione `Ctrl + C`.
 
-> Execute o servidor a partir da raiz do projeto: os caminhos de `data/maps`, `data/images` e `Frontend/editor.html` são resolvidos a partir da pasta em que o comando foi iniciado.
+## Compilação
 
-## Dados de exemplo
-
-É possível usar **qualquer imagem JPG ou PNG** de uma câmera de estacionamento para testar o editor. O formato COCO e as anotações não são necessários para cadastrar e desenhar um mapa manualmente.
-
-Para usar imagens de exemplo, o dataset [PKLot no Roboflow](https://public.roboflow.com/object-detection/pklot) oferece downloads nas opções `640` e `raw`. Se escolher `640`, baixe as imagens e selecione um arquivo `.jpg` de uma das pastas extraídas. O dataset é opcional: não é necessário incluí-lo no repositório nem importá-lo para o backend. O Roboflow informa licença **CC BY 4.0** e pede atribuição ao trabalho original ao usar o dataset em publicações. [292]
-
-## Cadastrar uma imagem e um mapa
-
-Com o servidor ligado, abra **outro terminal** na raiz do projeto. O cadastro é feito por `POST /mapas`, usando um arquivo JPG ou PNG existente no seu computador.
-
-No Prompt de Comando do Windows (`cmd`):
+Para verificar os tipos e gerar a versão compilada do backend:
 
 ```bat
-curl.exe -X POST "http://localhost:3000/mapas" -F "ID=estacionamento-01" -F "Nome=Estacionamento 01" -F "Imagem=@CAMINHO_REAL_DA_IMAGEM.jpg"
+npm run build
 ```
 
-**Antes de executar**, substitua `CAMINHO_REAL_DA_IMAGEM.jpg` pelo caminho completo de um arquivo real. Por exemplo, se você baixou o PKLot dentro do projeto, localize uma foto com:
+O comando cria a pasta `dist/`, contendo os arquivos JavaScript compilados a partir de `backend/src/`.
+
+Para executar a versão compilada:
 
 ```bat
-dir /s /b "PKLot.v2-640.coco\*.jpg"
+npm start
 ```
 
-Copie **uma linha completa** retornada pelo `dir` e coloque-a depois do `@` no comando de cadastro. Mantenha as aspas em torno de `"Imagem=@..."`, especialmente se o caminho tiver espaços. Não execute o texto `CAMINHO_REAL_DA_IMAGEM.jpg` literalmente.
+A pasta `dist/` é gerada automaticamente e não deve ser editada manualmente.
 
-Uma resposta com `"statusCode":201` indica que o mapa foi criado. Um ID já cadastrado é recusado; o cadastro não substitui o mapa anterior. O sistema salva:
+## Uso do editor
+
+1. Inicie o backend com `npm run dev`.
+2. Cadastre uma imagem e crie um mapa.
+3. Abra `http://localhost:3000/editor`.
+4. Informe o ID do mapa e clique em **Carregar mapa**.
+5. Clique em **Nova vaga**.
+6. Marque exatamente os quatro cantos da vaga.
+7. Clique em **Concluir vaga**, informe seu nome e salve.
+8. Ajuste ou exclua vagas quando necessário e clique em **Salvar vagas**.
+
+Cada vaga possui um `ID`, um `Nome` e exatamente quatro pontos normalizados entre 0 e 1.
+
+## Dados locais
+
+Ao iniciar o servidor, a aplicação cria automaticamente:
 
 ```text
 data/
-├── images/
-│   └── estacionamento-01.jpg
-└── maps/
-    └── estacionamento-01.json
+├─ images/
+├─ maps/
+├─ occupancy/
+└─ temp/
 ```
 
-A extensão da imagem salva seguirá o formato identificado pelo servidor: `.jpg` ou `.png`.
+| Pasta             | Finalidade                                                      |
+| ----------------- | --------------------------------------------------------------- |
+| `data/images/`    | Imagens de referência cadastradas                               |
+| `data/maps/`      | Arquivos JSON contendo mapas e vagas                            |
+| `data/occupancy/` | Reservada para resultados futuros de ocupação                   |
+| `data/temp/`      | Reservada para arquivos temporários do processamento de imagens |
 
-## Editar as vagas na imagem
+A pasta `data/` é ignorada pelo Git porque contém arquivos criados localmente durante a execução.
 
-1. Abra `http://localhost:3000/editor` no navegador.
-2. No campo de ID, informe o mesmo ID usado no cadastro, por exemplo `estacionamento-01`, e clique em **Carregar mapa**.
-3. Clique em **Nova vaga** e depois nos cantos da vaga sobre a imagem. Marque pelo menos três pontos.
-4. Clique em **Concluir vaga**, informe um nome e clique em **Salvar vagas**.
-5. Para ajustar uma vaga, clique no polígono e arraste seus pontos. Para removê-la, selecione-a e clique em **Excluir selecionada**. Salve novamente para persistir as alterações.
+## Dataset de exemplo
 
-O editor não faz upload: uma imagem precisa ser cadastrada pela API **antes** de abrir seu mapa na tela. Se aparecer “Mapa não encontrado”, confira o ID digitado e se o cadastro retornou `201`.
+O dataset [PKLot no Roboflow](https://public.roboflow.com/object-detection/pklot) pode ser usado como fonte opcional de imagens para teste e, futuramente, para avaliação da detecção de ocupação.
 
-Para verificar a persistência, abra `http://localhost:3000/mapas/estacionamento-01` ou consulte o arquivo em `data/maps`. A imagem cadastrada também pode ser aberta em `http://localhost:3000/imagens/estacionamento-01.jpg`, ajustando o ID e a extensão conforme o cadastro.
+O dataset deve permanecer separado da pasta `data/`. Para o mapeamento, basta escolher uma imagem de referência por câmera ou cenário; não é necessário cadastrar todas as imagens do dataset.
+
+Antes de usar o dataset em relatórios ou apresentações, consulte os termos de licença e a atribuição necessária na [página do PKLot no Roboflow](https://public.roboflow.com/object-detection/pklot). [292]
 
 ## API disponível
 
-| Método | Rota                | Função                                 |
-| ------ | ------------------- | -------------------------------------- |
-| GET    | `/saude`            | Verifica se a API está respondendo     |
-| POST   | `/mapas`            | Cadastra imagem e cria um mapa vazio   |
-| GET    | `/mapas/:ID`        | Retorna um mapa cadastrado             |
-| PUT    | `/mapas/:ID/vagas`  | Substitui a lista de vagas do mapa     |
-| GET    | `/imagens/:arquivo` | Exibe uma imagem cadastrada            |
-| GET    | `/editor`           | Abre a página provisória de mapeamento |
+| Método | Rota                | Função                                     |
+| ------ | ------------------- | ------------------------------------------ |
+| `GET`  | `/saude`            | Verifica se a API está respondendo         |
+| `POST` | `/mapas`            | Cadastra uma imagem e cria um mapa vazio   |
+| `GET`  | `/mapas/:ID`        | Retorna um mapa cadastrado                 |
+| `PUT`  | `/mapas/:ID/vagas`  | Atualiza a lista completa de vagas do mapa |
+| `GET`  | `/imagens/:arquivo` | Exibe uma imagem cadastrada                |
+| `GET`  | `/editor`           | Abre o editor provisório de vagas          |
 
-No `POST /mapas`, envie `multipart/form-data` com os campos `ID`, `Nome` e o arquivo `Imagem`. No `PUT /mapas/:ID/vagas`, envie JSON com uma propriedade `Vagas` contendo a lista completa. Cada vaga deve ter `ID`, `Nome` e pelo menos três `Pontos` com `X` e `Y` entre 0 e 1.
+No `POST /mapas`, envie `multipart/form-data` com `ID`, `Nome` e `Imagem`.
 
-## Organização desta etapa
+No `PUT /mapas/:ID/vagas`, envie um JSON com a lista completa de vagas. Cada vaga deve possuir `ID`, `Nome` e exatamente quatro `Pontos`, com `X` e `Y` entre 0 e 1.
 
-- `src/`: backend Node.js, TypeScript e Express.
-- `Frontend/editor.html`: editor provisório para testar os polígonos.
-- `data/maps/`: mapas cadastrados em JSON.
-- `data/images/`: imagens de referência cadastradas.
+## Estrutura do projeto
 
-O backend e o frontend definitivo são responsabilidades separadas. O arquivo HTML atual existe apenas para validar o fluxo de mapeamento enquanto a interface definitiva é desenvolvida.
+```text
+PI---Monitor-de-Vagas/
+├─ backend/
+│  └─ src/
+│     ├─ common/
+│     ├─ config/
+│     ├─ routes/
+│     ├─ services/
+│     ├─ types/
+│     └─ server.ts
+├─ data/
+│  ├─ images/
+│  ├─ maps/
+│  ├─ occupancy/
+│  └─ temp/
+├─ docs/
+├─ frontend/
+│  └─ editor.html
+├─ .gitignore
+├─ package.json
+├─ package-lock.json
+├─ README.md
+└─ tsconfig.json
+```
+
+Para uma descrição detalhada da estrutura e da responsabilidade de cada pasta, consulte:
+
+- [`docs/estrutura-do-projeto.md`](docs/estrutura-do-projeto.md)
+
+## Comandos disponíveis
+
+| Comando         | Finalidade                                   |
+| --------------- | -------------------------------------------- |
+| `npm install`   | Instala as dependências do projeto           |
+| `npm run dev`   | Executa o backend em modo de desenvolvimento |
+| `npm run build` | Compila o TypeScript para a pasta `dist/`    |
+| `npm start`     | Executa a versão compilada do backend        |
+
+## Próximas etapas
+
+1. Aprimorar a usabilidade do editor de vagas.
+2. Processar imagens de estacionamento.
+3. Identificar veículos nas regiões mapeadas.
+4. Classificar vagas como livres ou ocupadas.
+5. Armazenar resultados de ocupação.
+6. Integrar uma interface para exibir as vagas disponíveis.
