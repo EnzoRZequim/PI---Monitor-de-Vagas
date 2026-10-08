@@ -1,9 +1,9 @@
 import { Link } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { BotaoContorno } from '@/components/BotaoContorno';
+import { Botao } from '@/components/Botao';
 import { Logo } from '@/components/Logo';
-import { cores, fontes, LARGURA_CONTEUDO } from '@/theme';
+import { cores, espaco, LARGURA_CONTEUDO, tipografia } from '@/theme';
 
 // Barra superior do desktop. No mobile os botões de parceiro ficam no rodapé da tela inicial.
 export function Cabecalho({ mostrarAcoesParceiro = false }: { mostrarAcoesParceiro?: boolean }) {
@@ -19,8 +19,8 @@ export function Cabecalho({ mostrarAcoesParceiro = false }: { mostrarAcoesParcei
 
         {mostrarAcoesParceiro && (
           <View style={styles.acoes}>
-            <BotaoContorno titulo="Área do parceiro" />
-            <BotaoContorno titulo="Tornar-se um parceiro" />
+            <Botao tipo="secundario" titulo="Área do parceiro" />
+            <Botao tipo="secundario" titulo="Tornar-se um parceiro" />
           </View>
         )}
       </View>
@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
   barra: {
     width: '100%',
     alignItems: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: espaco[8],
     borderBottomWidth: 1,
     borderBottomColor: cores.borda,
     backgroundColor: cores.fundo,
@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
   conteudo: {
     width: '100%',
     maxWidth: LARGURA_CONTEUDO,
-    paddingVertical: 16,
+    paddingVertical: espaco[4],
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -48,15 +48,14 @@ const styles = StyleSheet.create({
   marca: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: espaco[3],
   },
   nome: {
-    fontFamily: fontes.titulo,
-    fontSize: 20,
+    ...tipografia.h6,
     color: cores.primaria,
   },
   acoes: {
     flexDirection: 'row',
-    gap: 12,
+    gap: espaco[3],
   },
 });

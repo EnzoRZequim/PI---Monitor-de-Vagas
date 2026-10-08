@@ -1,5 +1,6 @@
-import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
+import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { Montserrat_700Bold } from '@expo-google-fonts/montserrat';
+import { SpaceMono_400Regular } from '@expo-google-fonts/space-mono';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -11,7 +12,9 @@ export default function RootLayout() {
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
+    Inter_700Bold,
     Montserrat_700Bold,
+    SpaceMono_400Regular,
   });
 
   if (!fontesCarregadas) return null;

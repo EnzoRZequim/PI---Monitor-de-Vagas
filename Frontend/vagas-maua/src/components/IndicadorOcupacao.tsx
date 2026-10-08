@@ -1,12 +1,7 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
-import { fontes } from '@/theme';
-
-const NIVEIS = {
-  livre: { fundo: '#4DD67C', borda: '#2E9E55' },
-  moderado: { fundo: '#E4DC24', borda: '#A9A214' },
-  cheio: { fundo: '#E46B6B', borda: '#B04444' },
-};
+import { CaixaGradiente } from '@/components/CaixaGradiente';
+import { espaco, fontes, ocupacao, raio, tipografia } from '@/theme';
 
 export function taxaDeOcupacao(ocupadas: number, total: number) {
   return total > 0 ? Math.min(ocupadas / total, 1) : 1;
@@ -15,38 +10,38 @@ export function taxaDeOcupacao(ocupadas: number, total: number) {
 // Abaixo de 50% ocupado: verde; até 80%: amarelo; acima disso: vermelho
 export function corDaOcupacao(ocupadas: number, total: number) {
   const taxa = taxaDeOcupacao(ocupadas, total);
-  if (taxa < 0.5) return NIVEIS.livre;
-  if (taxa <= 0.8) return NIVEIS.moderado;
-  return NIVEIS.cheio;
+  if (taxa < 0.5) return ocupacao.livre;
+  if (taxa <= 0.8) return ocupacao.moderado;
+  return ocupacao.cheio;
 }
 
+// Badge com a quantidade de vagas ocupadas
 export function IndicadorOcupacao({ ocupadas, total }: { ocupadas: number; total: number }) {
   const cor = corDaOcupacao(ocupadas, total);
 
   return (
-    <View
-      style={[styles.pilula, { backgroundColor: cor.fundo, borderColor: cor.borda }]}
-      accessibilityLabel={`${ocupadas} de ${total} vagas ocupadas`}
+    <CaixaGradiente
+      borda={cor.borda}
+      fundo={cor.fundo}
+      raio={raio.pilula}
+      espessura={1}
+      estiloConteudo={styles.conteudo}
     >
-      <Text style={styles.texto}>
+      <Text style={[styles.texto, { color: cor.texto }]} accessibilityLabel={`${ocupadas} de ${total} vagas ocupadas`}>
         {ocupadas}/{total}
       </Text>
-    </View>
+    </CaixaGradiente>
   );
 }
 
 const styles = StyleSheet.create({
-  pilula: {
-    minWidth: 64,
+  conteudo: {
     alignItems: 'center',
-    borderRadius: 999,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingHorizontal: espaco[2],
+    paddingVertical: 6,
   },
   texto: {
-    fontFamily: fontes.medio,
-    fontSize: 13,
-    color: '#1F1F1F',
+    ...tipografia.pequeno,
+    fontFamily: fontes.inter.medio,
   },
 });

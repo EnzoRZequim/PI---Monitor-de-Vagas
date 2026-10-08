@@ -2,13 +2,13 @@ import { Link, router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { BotaoPrimario } from '@/components/BotaoPrimario';
+import { BotaoIcone } from '@/components/BotaoIcone';
 import { Cabecalho } from '@/components/Cabecalho';
 import { Logo } from '@/components/Logo';
 import { buscarCampus, buscarParceiro, type Campus } from '@/dados/parceiros';
 import { lerUltimoLocal } from '@/dados/ultimoLocal';
 import { rotaDoCampus } from '@/rotas';
-import { cores, fontes, LARGURA_CONTEUDO } from '@/theme';
+import { cores, espaco, fontes, LARGURA_CONTEUDO, tipografia } from '@/theme';
 
 type UltimoVisitado = { parceiroId: string; campus: Campus };
 
@@ -47,12 +47,7 @@ export default function TelaInicial() {
             </Text>
 
             <View style={styles.acao}>
-              <BotaoPrimario
-                titulo="Acessar Locais"
-                icone="arrow-right"
-                tamanho="grande"
-                onPress={() => router.push('/parceiros')}
-              />
+              <BotaoIcone titulo="Acessar Locais" icone="arrow-right" onPress={() => router.push('/parceiros')} />
 
               {ultimo && (
                 <View style={styles.ultimoLocal}>
@@ -82,8 +77,8 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
-    paddingVertical: 64,
+    paddingHorizontal: espaco[8],
+    paddingVertical: espaco[16],
   },
   hero: {
     width: '100%',
@@ -91,42 +86,39 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 80,
+    gap: espaco[20],
   },
   texto: {
     flexShrink: 1,
     maxWidth: 560,
   },
   titulo: {
-    fontFamily: fontes.titulo,
-    fontSize: 56,
+    ...tipografia.h3,
     color: cores.primaria,
-    marginBottom: 20,
+    marginBottom: espaco[5],
   },
   descricao: {
-    fontFamily: fontes.regular,
-    fontSize: 18,
-    lineHeight: 28,
+    ...tipografia.corpo,
+    lineHeight: 24,
     color: cores.textoSuave,
   },
   acao: {
-    marginTop: 40,
+    marginTop: espaco[10],
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: 32,
+    gap: espaco[8],
   },
   ultimoLocal: {
-    gap: 2,
+    gap: espaco[1],
   },
   ultimoLocalRotulo: {
-    fontFamily: fontes.regular,
-    fontSize: 14,
+    ...tipografia.pequeno,
     color: cores.primaria,
   },
   ultimoLocalLink: {
-    fontFamily: fontes.seminegrito,
-    fontSize: 15,
+    ...tipografia.corpo,
+    fontFamily: fontes.inter.seminegrito,
     color: cores.primaria,
     textDecorationLine: 'underline',
   },

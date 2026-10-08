@@ -18,7 +18,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   texto: {
-    color: '#FFFFFF',
-    fontFamily: fontes.regular,
+    color: cores.textoInverso,
+    fontFamily: fontes.inter.regular,
   },
 });

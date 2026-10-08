@@ -1,11 +1,11 @@
-import { Feather } from '@expo/vector-icons';
 import { router, Stack, type Href } from 'expo-router';
 import { useMemo, useState, type ReactNode } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { BotaoPrimario } from '@/components/BotaoPrimario';
+import { BotaoIcone } from '@/components/BotaoIcone';
 import { Cabecalho } from '@/components/Cabecalho';
-import { cores, fontes, LARGURA_CONTEUDO } from '@/theme';
+import { CampoBusca } from '@/components/CampoTexto';
+import { cores, espaco, fontes, LARGURA_CONTEUDO, tipografia } from '@/theme';
 
 // Ignora maiúsculas e acentos na busca ("maua" encontra "Mauá")
 function normalizar(texto: string) {
@@ -38,7 +38,6 @@ export function TelaLista<T>({
   colunas = 2,
 }: Props<T>) {
   const [busca, setBusca] = useState('');
-  const [buscaEmFoco, setBuscaEmFoco] = useState(false);
 
   const filtrados = useMemo(() => {
     const termo = normalizar(busca.trim());
@@ -56,7 +55,7 @@ export function TelaLista<T>({
         <View style={styles.conteudo}>
           <View style={styles.topo}>
             <View style={styles.tituloBloco}>
-              <BotaoPrimario titulo="Voltar" icone="rotate-ccw" onPress={voltar} />
+              <BotaoIcone titulo="Voltar" icone="rotate-ccw" onPress={voltar} />
               <View style={styles.titulos}>
                 <Text style={styles.titulo}>{titulo}</Text>
                 {subtitulo && <Text style={styles.subtitulo}>{subtitulo}</Text>}
@@ -65,19 +64,13 @@ export function TelaLista<T>({
               </View>
             </View>
 
-            <View style={[styles.busca, buscaEmFoco && styles.buscaFoco]}>
-              <TextInput
-                value={busca}
-                onChangeText={setBusca}
-                onFocus={() => setBuscaEmFoco(true)}
-                onBlur={() => setBuscaEmFoco(false)}
-                placeholder={placeholderBusca}
-                placeholderTextColor={cores.textoSuave}
-                style={styles.buscaCampo}
-                accessibilityLabel={placeholderBusca.replace('...', '')}
-              />
-              <Feather name="search" size={20} color={cores.textoSuave} />
-            </View>
+            <CampoBusca
+              value={busca}
+              onChangeText={setBusca}
+              placeholder={placeholderBusca}
+              accessibilityLabel={placeholderBusca}
+              style={styles.busca}
+            />
           </View>
 
           {filtrados.length > 0 ? (
@@ -97,7 +90,7 @@ export function TelaLista<T>({
   );
 }
 
-const ESPACO_DIVISOR = 18;
+const ESPACO_DIVISOR = espaco[4];
 
 const styles = StyleSheet.create({
   tela: {
@@ -107,64 +100,42 @@ const styles = StyleSheet.create({
   rolagem: {
     flexGrow: 1,
     alignItems: 'center',
-    paddingHorizontal: 32,
-    paddingVertical: 48,
+    paddingHorizontal: espaco[8],
+    paddingVertical: espaco[12],
   },
   conteudo: {
     width: '100%',
     maxWidth: LARGURA_CONTEUDO,
   },
   topo: {
-    marginBottom: 28,
+    marginBottom: espaco[6],
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
     flexWrap: 'wrap',
-    gap: 24,
+    gap: espaco[6],
   },
   tituloBloco: {
     alignItems: 'flex-start',
-    gap: 24,
+    gap: espaco[6],
   },
   titulos: {
-    gap: 6,
+    gap: espaco[2],
   },
   titulo: {
-    fontFamily: fontes.titulo,
-    fontSize: 48,
+    ...tipografia.h3,
     color: cores.primaria,
   },
   subtitulo: {
-    fontFamily: fontes.medio,
-    fontSize: 16,
+    ...tipografia.corpo,
+    fontFamily: fontes.inter.medio,
     color: cores.primaria,
   },
   busca: {
     width: 420,
     maxWidth: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: cores.superficie,
-    borderRadius: 999,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    paddingHorizontal: 20,
-    paddingVertical: 4,
-    boxShadow: '0 3px 6px rgba(0, 0, 0, 0.12)',
     // Mantém a busca alinhada ao texto, e não à barra abaixo do título
-    marginBottom: ESPACO_DIVISOR + 6 + 2,
-  },
-  buscaFoco: {
-    borderColor: cores.primaria,
-  },
-  buscaCampo: {
-    flex: 1,
-    paddingVertical: 12,
-    fontFamily: fontes.regular,
-    fontSize: 16,
-    color: cores.texto,
-    // Remove o contorno de foco padrão do navegador; o foco é indicado pela borda azul da pílula
-    outlineWidth: 0,
+    marginBottom: ESPACO_DIVISOR + espaco[2] + 2,
   },
   divisor: {
     height: 2,
@@ -174,14 +145,13 @@ const styles = StyleSheet.create({
   grade: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    margin: -10,
+    margin: -espaco[2],
   },
   celula: {
-    padding: 10,
+    padding: espaco[2],
   },
   vazio: {
-    fontFamily: fontes.regular,
-    fontSize: 16,
+    ...tipografia.corpo,
     color: cores.textoSuave,
   },
 });
