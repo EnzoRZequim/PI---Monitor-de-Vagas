@@ -13,19 +13,26 @@ A etapa implementada até agora é o **mapeamento manual das vagas de uma imagem
 - Os pontos são salvos com coordenadas normalizadas entre 0 e 1.
 - Os mapas ficam em arquivos JSON e as imagens ficam armazenadas localmente.
 
-A classificação de vagas como livres ou ocupadas, a atualização em tempo real e a interface definitiva **ainda não foram implementadas**. O editor atual é uma ferramenta de teste; a equipe de frontend desenvolverá a interface definitiva separadamente.
+Em paralelo, a interface definitiva está sendo desenvolvida como um **app Expo** (React Native) na pasta `Frontend/`:
+
+- Tela inicial com atalho para o último local visitado, salvo no próprio aparelho.
+- Lista de parceiros, campi de cada parceiro e ocupação das vagas por bloco, com busca.
+- Design system com as cores, fontes e componentes definidos no Figma.
+
+A classificação de vagas como livres ou ocupadas e a atualização em tempo real **ainda não foram implementadas**. O app ainda usa dados provisórios e não está conectado ao backend. O `Frontend/editor.html` é só uma ferramenta de teste do mapeamento.
 
 ## Pré-requisitos
 
 - Node.js e npm instalados.
 - Uma imagem JPG ou PNG de um estacionamento para cadastrar como referência.
 - Acesso a um terminal na raiz do projeto.
+- Para testar o app: o aplicativo **Expo Go** no celular (Android ou iOS) ou um navegador.
 
 Não é necessário instalar PostgreSQL nesta etapa.
 
 ## Instalação
 
-Clone o repositório ou baixe seus arquivos. No terminal, entre na pasta raiz do projeto — a pasta que contém `package.json` — e instale as dependências:
+Clone o repositório ou baixe seus arquivos. No terminal, entre na pasta raiz do projeto — a pasta que contém `package.json` e `src/`, não a pasta `Frontend/` — e instale as dependências do backend:
 
 ```bat
 npm install
@@ -114,11 +121,43 @@ Para verificar a persistência, abra `http://localhost:3000/mapas/estacionamento
 
 No `POST /mapas`, envie `multipart/form-data` com os campos `ID`, `Nome` e o arquivo `Imagem`. No `PUT /mapas/:ID/vagas`, envie JSON com uma propriedade `Vagas` contendo a lista completa. Cada vaga deve ter `ID`, `Nome` e pelo menos três `Pontos` com `X` e `Y` entre 0 e 1.
 
+## Executar o app
+
+O app fica na pasta `Frontend/` e tem dependências próprias, separadas das do backend. Nesta etapa ele não precisa do backend ligado. Em um terminal, entre na pasta e instale as dependências:
+
+```bat
+cd Frontend
+npm install
+```
+
+O aviso `npm warn deprecated uuid@7.0.3` e o resumo de vulnerabilidades no final da instalação são esperados: vêm das ferramentas internas do Expo e não impedem o app de rodar. **Não execute `npm audit fix --force`**, pois ele rebaixa o Expo para uma versão antiga e quebra o projeto.
+
+Confira se o TypeScript não aponta erros:
+
+```bat
+npx tsc --noEmit
+```
+
+Inicie o servidor de desenvolvimento:
+
+```bat
+npx expo start
+```
+
+Escaneie o QR code exibido no terminal com o Expo Go (Android) ou com a câmera (iOS). O celular precisa estar na mesma rede Wi-Fi do computador. Para abrir no navegador, pressione `w`. Para parar, pressione `Ctrl+C`.
+
+> Para adicionar bibliotecas ao app, use `npx expo install <pacote>` em vez de `npm install <pacote>`: o Expo escolhe a versão compatível com o SDK do projeto. Se o `npm install` voltar a mostrar avisos `ERESOLVE`, rode `npx expo install --fix`.
+
 ## Organização desta etapa
 
 - `src/`: backend Node.js, TypeScript e Express.
+- `Frontend/`: app Expo (React Native e TypeScript) com a interface definitiva.
+  - `Frontend/src/app/`: telas do app; cada arquivo é uma rota do Expo Router.
+  - `Frontend/src/components/`: componentes do design system.
+  - `Frontend/src/dados/`: dados provisórios dos parceiros e o último local visitado.
+  - `Frontend/src/theme.ts`: cores, fontes, espaçamentos e tipografia vindos do Figma.
 - `Frontend/editor.html`: editor provisório para testar os polígonos.
 - `data/maps/`: mapas cadastrados em JSON.
 - `data/images/`: imagens de referência cadastradas.
 
-O backend e o frontend definitivo são responsabilidades separadas. O arquivo HTML atual existe apenas para validar o fluxo de mapeamento enquanto a interface definitiva é desenvolvida.
+O backend e o frontend são responsabilidades separadas, cada um com seu próprio `package.json`. O `editor.html` existe apenas para validar o fluxo de mapeamento, e o app ainda será conectado à API.
