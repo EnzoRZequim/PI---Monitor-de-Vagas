@@ -1,6 +1,12 @@
-import type { Href } from 'expo-router';
+import { router, type Href } from 'expo-router';
 
 import type { Parceiro } from '@/dados/parceiros';
+
+// Botões "Voltar": usa o histórico e, sem ele (ex.: a página foi aberta direto pela URL), vai para `rota`
+export function voltar(rota: Href) {
+  if (router.canGoBack()) router.back();
+  else router.replace(rota);
+}
 
 export function rotaDoCampus(parceiroId: string, campusId: string): Href {
   return { pathname: '/parceiros/[parceiroId]/[campusId]', params: { parceiroId, campusId } };

@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons';
-import { useState, type ReactNode } from 'react';
+import { useState, type ReactNode, type Ref } from 'react';
 import {
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -17,6 +18,8 @@ import { cores, espaco, fontes, gradientes, raio, sombras, tipografia } from '@/
 type Props = Omit<TextInputProps, 'style'> & {
   // Caixa externa (largura, margens)
   style?: StyleProp<ViewStyle>;
+  // Repassada ao TextInput (ex.: para focar o próximo campo de um formulário)
+  ref?: Ref<TextInput>;
 };
 
 // Input do Figma: cantos de cartão, sem ícone
@@ -113,6 +116,8 @@ function Campo({ raioCampo, paddingVertical, icone, style, onFocus, onBlur, ...p
           onBlur?.(e);
         }}
         placeholderTextColor={corDoTexto(foco)}
+        // Remove o sublinhado nativo do Android, que escurece com o foco; a borda já indica o foco
+        underlineColorAndroid="transparent"
         style={styles.campo}
       />
       {icone && <Feather name={icone} size={24} color={corDoIcone(foco)} />}
@@ -128,6 +133,10 @@ type MolduraProps = {
   children: ReactNode;
 };
 
+// No Android a sombra de foco aparecia com cantos retangulares em volta do campo; lá o foco fica
+// indicado só pela borda azul
+const SOMBRA_NO_FOCO = Platform.OS !== 'android';
+
 // Fundo, borda e sombra comuns a todos os campos
 function Moldura({ foco, raioCampo, paddingVertical, style, children }: MolduraProps) {
   return (
@@ -135,7 +144,7 @@ function Moldura({ foco, raioCampo, paddingVertical, style, children }: MolduraP
       borda={foco ? gradientes.foco.borda : gradientes.neutro.borda}
       fundo={cores.superficie}
       raio={raioCampo}
-      style={[foco && styles.sombraFoco, style]}
+      style={[foco && SOMBRA_NO_FOCO && styles.sombraFoco, style]}
       estiloConteudo={[styles.conteudo, { paddingVertical }]}
     >
       {children}

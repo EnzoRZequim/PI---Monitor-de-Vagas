@@ -6,6 +6,7 @@
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "backgroundColor": "#f5f5f5",
     "ios": {
       "supportsTablet": true
     },
@@ -24,7 +25,19 @@
     },
     "plugins": [
       "expo-router",
-      "expo-status-bar",
+      [
+        "expo-status-bar",
+        {
+          "style": "dark"
+        }
+      ],
+      [
+        "expo-navigation-bar",
+        {
+          "enforceContrast": false,
+          "style": "dark"
+        }
+      ],
       "expo-font"
     ],
     "scheme": "vagasmaua"

@@ -1,11 +1,14 @@
-import { router, Stack, type Href } from 'expo-router';
+import { Stack, type Href } from 'expo-router';
 import { useMemo, useState, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BotaoIcone } from '@/components/BotaoIcone';
 import { Cabecalho } from '@/components/Cabecalho';
 import { CampoBusca } from '@/components/CampoTexto';
-import { cores, espaco, fontes, LARGURA_CONTEUDO, tipografia } from '@/theme';
+import { useTelaPequena } from '@/hooks/useTelaPequena';
+import { voltar } from '@/rotas';
+import { cores, espaco, fontes, LARGURA_CONTEUDO, larguras, tipografia } from '@/theme';
 
 // Ignora maiúsculas e acentos na busca ("maua" encontra "Mauá")
 function normalizar(texto: string) {
@@ -25,7 +28,8 @@ type Props<T> = {
   colunas?: number;
 };
 
-// Layout desktop compartilhado pelas telas de parceiros, campi e blocos
+// Layout compartilhado pelas telas de parceiros, campi e blocos. No celular, `colunas` é ignorado:
+// a lista tem uma coluna só.
 export function TelaLista<T>({
   titulo,
   subtitulo,
@@ -38,24 +42,63 @@ export function TelaLista<T>({
   colunas = 2,
 }: Props<T>) {
   const [busca, setBusca] = useState('');
+  const telaPequena = useTelaPequena();
+  const insets = useSafeAreaInsets();
 
   const filtrados = useMemo(() => {
     const termo = normalizar(busca.trim());
     return itens.filter((item) => normalizar(textoBusca(item)).includes(termo));
   }, [busca, itens, textoBusca]);
 
-  const voltar = () => (router.canGoBack() ? router.back() : router.replace(voltarPara));
+  const tituloAba = <Stack.Screen options={{ title: `${titulo} | Vagas Maua` }} />;
+  const botaoVoltar = <BotaoIcone titulo="Voltar" icone="rotate-ccw" onPress={() => voltar(voltarPara)} />;
+  const campoBusca = (
+    <CampoBusca
+      value={busca}
+      onChangeText={setBusca}
+      placeholder={placeholderBusca}
+      accessibilityLabel={placeholderBusca}
+      style={!telaPequena && styles.busca}
+    />
+  );
+  const vazio = (
+    <Text style={[styles.vazio, telaPequena && celular.vazio]}>Nenhum resultado para "{busca}".</Text>
+  );
+
+  // Celular: título, busca e "Voltar" ficam fixos e só a lista rola entre eles
+  if (telaPequena) {
+    return (
+      <View style={[styles.tela, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+        {tituloAba}
+
+        <View style={celular.conteudo}>
+          <View style={celular.titulos}>
+            <Text style={celular.titulo}>{titulo}</Text>
+            {subtitulo && <Text style={celular.subtitulo}>{subtitulo}</Text>}
+          </View>
+          {campoBusca}
+          <View style={celular.divisor} />
+
+          <ScrollView style={celular.lista} contentContainerStyle={celular.listaConteudo}>
+            {filtrados.length > 0 ? filtrados.map((item) => <View key={chave(item)}>{renderItem(item)}</View>) : vazio}
+          </ScrollView>
+        </View>
+
+        <View style={celular.rodape}>{botaoVoltar}</View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.tela}>
-      <Stack.Screen options={{ title: `${titulo} | Vagas Maua` }} />
+      {tituloAba}
       <Cabecalho />
 
       <ScrollView contentContainerStyle={styles.rolagem}>
         <View style={styles.conteudo}>
           <View style={styles.topo}>
             <View style={styles.tituloBloco}>
-              <BotaoIcone titulo="Voltar" icone="rotate-ccw" onPress={voltar} />
+              {botaoVoltar}
               <View style={styles.titulos}>
                 <Text style={styles.titulo}>{titulo}</Text>
                 {subtitulo && <Text style={styles.subtitulo}>{subtitulo}</Text>}
@@ -64,13 +107,7 @@ export function TelaLista<T>({
               </View>
             </View>
 
-            <CampoBusca
-              value={busca}
-              onChangeText={setBusca}
-              placeholder={placeholderBusca}
-              accessibilityLabel={placeholderBusca}
-              style={styles.busca}
-            />
+            {campoBusca}
           </View>
 
           {filtrados.length > 0 ? (
@@ -82,7 +119,7 @@ export function TelaLista<T>({
               ))}
             </View>
           ) : (
-            <Text style={styles.vazio}>Nenhum resultado para "{busca}".</Text>
+            vazio
           )}
         </View>
       </ScrollView>
@@ -153,5 +190,56 @@ const styles = StyleSheet.create({
   vazio: {
     ...tipografia.corpo,
     color: cores.textoSuave,
+  },
+});
+
+const celular = StyleSheet.create({
+  conteudo: {
+    flex: 1,
+    width: '100%',
+    maxWidth: larguras.sm,
+    alignSelf: 'center',
+    // Centraliza na vertical enquanto a lista couber na tela
+    justifyContent: 'center',
+    paddingHorizontal: espaco[4],
+    paddingTop: espaco[8],
+  },
+  titulos: {
+    alignItems: 'center',
+    gap: espaco[2],
+    marginBottom: espaco[6],
+  },
+  titulo: {
+    ...tipografia.h4,
+    color: cores.primaria,
+    textAlign: 'center',
+  },
+  subtitulo: {
+    ...tipografia.pequeno,
+    fontFamily: fontes.inter.medio,
+    color: cores.primaria,
+    textAlign: 'center',
+  },
+  divisor: {
+    alignSelf: 'center',
+    width: 150,
+    height: 2,
+    backgroundColor: cores.primaria,
+    marginVertical: espaco[8],
+  },
+  lista: {
+    // Ocupa só a altura dos cartões e encolhe (passando a rolar) quando eles não cabem
+    flexGrow: 0,
+    flexShrink: 1,
+  },
+  listaConteudo: {
+    gap: espaco[6],
+  },
+  vazio: {
+    textAlign: 'center',
+  },
+  rodape: {
+    alignItems: 'center',
+    paddingVertical: espaco[8],
   },
 });

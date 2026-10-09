@@ -78,7 +78,7 @@ export const paleta = {
 
 // Cada peso é um arquivo de fonte separado. Para usar outro, adicione aqui e carregue em app/_layout.tsx.
 export const fontes = {
-  montserrat: { negrito: "Montserrat_700Bold" },
+  montserrat: { regular: "Montserrat_400Regular", negrito: "Montserrat_700Bold" },
   inter: {
     regular: "Inter_400Regular",
     medio: "Inter_500Medium",

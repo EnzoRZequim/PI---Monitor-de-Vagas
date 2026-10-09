@@ -4,12 +4,14 @@ import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CaixaGradiente } from '@/components/CaixaGradiente';
 import { useDestaque } from '@/hooks/useDestaque';
-import { cores, espaco, fontes, gradientes, raio, tipografia } from '@/theme';
+import { cores, espaco, fontes, gradientes, raio, tamanhoFonte, tipografia } from '@/theme';
 
 type Props = {
   titulo: string;
   icone: keyof typeof Feather.glyphMap;
   tipo?: 'primario' | 'secundario';
+  // Título maior, como o "Acessar Locais" da tela inicial no celular
+  grande?: boolean;
   onPress?: () => void;
 };
 
@@ -20,16 +22,16 @@ const RECUO = 6;
 
 // Botão em pílula com ícone à direita. No hover, o primário expande o círculo branco por todo o
 // botão e o secundário ganha o fundo azul.
-export function BotaoIcone({ titulo, icone, tipo = 'primario', onPress }: Props) {
+export function BotaoIcone({ titulo, icone, tipo = 'primario', grande = false, onPress }: Props) {
   const { progresso, eventos } = useDestaque();
   const [largura, setLargura] = useState(0);
 
   if (tipo === 'secundario') {
     return (
       <Pressable onPress={onPress} {...eventos} accessibilityRole="button">
-        <Conteudo titulo={titulo} icone={icone} cor={cores.primaria} corIcone={cores.primariaEscura} />
+        <Conteudo titulo={titulo} icone={icone} grande={grande} cor={cores.primaria} corIcone={cores.primariaEscura} />
         <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: progresso }]}>
-          <Conteudo titulo={titulo} icone={icone} cor={cores.textoInverso} preenchido />
+          <Conteudo titulo={titulo} icone={icone} grande={grande} cor={cores.textoInverso} preenchido />
         </Animated.View>
       </Pressable>
     );
@@ -51,7 +53,7 @@ export function BotaoIcone({ titulo, icone, tipo = 'primario', onPress }: Props)
       accessibilityRole="button"
     >
       <CaixaGradiente {...gradientes.primario} raio={raio.pilula} espessura={ESPESSURA} estiloConteudo={styles.conteudo}>
-        <Text style={[styles.titulo, { color: cores.textoInverso }]}>{titulo}</Text>
+        <Text style={[styles.titulo, grande && styles.tituloGrande, { color: cores.textoInverso }]}>{titulo}</Text>
         <View style={styles.espacoIcone} />
         <Animated.View style={[styles.circulo, circulo]}>
           <CaixaGradiente
@@ -72,12 +74,13 @@ export function BotaoIcone({ titulo, icone, tipo = 'primario', onPress }: Props)
 type ConteudoProps = {
   titulo: string;
   icone: keyof typeof Feather.glyphMap;
+  grande: boolean;
   cor: string;
   corIcone?: string;
   preenchido?: boolean;
 };
 
-function Conteudo({ titulo, icone, cor, corIcone = cor, preenchido = false }: ConteudoProps) {
+function Conteudo({ titulo, icone, grande, cor, corIcone = cor, preenchido = false }: ConteudoProps) {
   return (
     <CaixaGradiente
       borda={gradientes.primario.borda}
@@ -87,7 +90,7 @@ function Conteudo({ titulo, icone, cor, corIcone = cor, preenchido = false }: Co
       espessura={ESPESSURA}
       estiloConteudo={styles.conteudo}
     >
-      <Text style={[styles.titulo, { color: cor }]}>{titulo}</Text>
+      <Text style={[styles.titulo, grande && styles.tituloGrande, { color: cor }]}>{titulo}</Text>
       <View style={[styles.espacoIcone, styles.centro]}>
         <Feather name={icone} size={20} color={corIcone} />
       </View>
@@ -107,6 +110,9 @@ const styles = StyleSheet.create({
   titulo: {
     ...tipografia.corpo,
     fontFamily: fontes.inter.seminegrito,
+  },
+  tituloGrande: {
+    fontSize: tamanhoFonte.lg,
   },
   espacoIcone: {
     width: CIRCULO,
