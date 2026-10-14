@@ -17,3 +17,6 @@ PKLot.v2-640.coco/
 
 # Arquivos de log
 *.log
+
+# Graphify: Cria grafos para IA interpretar 
+.graphify-out
