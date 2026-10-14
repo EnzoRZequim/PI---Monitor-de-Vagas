@@ -221,6 +221,8 @@ Para uma descrição detalhada da estrutura e da responsabilidade de cada pasta,
 | --------------- | -------------------------------------------- |
 | `npm install`   | Instala as dependências do projeto           |
 | `npm run dev`   | Executa o backend em modo de desenvolvimento |
+| `npm run dev:all` | Executa backend e frontend juntos         |
+| `npm run dev:frontend` | Executa somente o frontend            |
 | `npm run build` | Compila o TypeScript para a pasta `dist/`    |
 | `npm start`     | Executa a versão compilada do backend        |
 

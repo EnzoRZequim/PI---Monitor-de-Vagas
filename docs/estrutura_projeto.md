@@ -11,6 +11,7 @@ PI---Monitor-de-Vagas/
 ├─ data/
 ├─ docs/
 ├─ frontend/
+├─ scripts/
 ├─ node_modules/
 ├─ dist/
 ├─ .gitignore
@@ -141,6 +142,12 @@ Principais arquivos:
 - `src/tipos.ts`: tipos TypeScript do frontend.
 
 Durante `npm run dev`, o frontend sobe em `http://localhost:5173`. Sua pasta `node_modules/` e `dist/` são ignoradas pelo Git.
+
+### `scripts/`
+
+Contém scripts auxiliares de desenvolvimento.
+
+Atualmente, possui `dev-all.js`, que inicia o backend e o frontend juntos com o comando `npm run dev:all` na raiz do projeto.
 
 ### `node_modules/`
 
