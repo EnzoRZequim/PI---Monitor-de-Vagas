@@ -20,3 +20,4 @@ PKLot.v2-640.coco/
 
 # Graphify: Cria grafos para IA interpretar 
 .graphify-out
+.graphify-out*
