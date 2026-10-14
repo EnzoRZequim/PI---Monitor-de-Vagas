@@ -47,7 +47,8 @@ Atualmente, possui o arquivo `ResponseHelper.ts`, responsável por padronizar as
 
 Contém configurações centralizadas da aplicação.
 
-O arquivo `paths.ts` define os caminhos das pastas de dados, evitando que caminhos como `data/images` e `data/maps` sejam repetidos manualmente em vários arquivos.
+- `paths.ts` define os caminhos das pastas de dados (`data/images`, `data/maps`, `data/occupancy`, `data/temp`), evitando caminhos repetidos em vários arquivos.
+- `ensureDirectories.ts` cria essas pastas automaticamente quando o servidor é iniciado.
 
 ### `backend/src/routes/`
 
@@ -55,15 +56,18 @@ Contém as rotas da API.
 
 O arquivo `mapas.ts` registra as rotas relacionadas aos mapas de estacionamento, incluindo:
 
-- Cadastro de mapa e imagem;
-- Busca de um mapa pelo ID;
-- Salvamento e atualização das vagas mapeadas.
+- Cadastro de mapa e imagem (`POST /mapas`);
+- Listagem de mapas cadastrados (`GET /mapas`);
+- Busca de um mapa pelo ID (`GET /mapas/:ID`);
+- Salvamento e atualização das vagas mapeadas (`PUT /mapas/:ID/vagas`).
+
+Cada vaga é validada com exatamente quatro pontos, com `X` e `Y` entre 0 e 1.
 
 ### `backend/src/services/`
 
 Contém regras de acesso e persistência dos dados.
 
-O arquivo `MapaStorage.ts` é responsável por ler e salvar os arquivos JSON dos mapas na pasta `data/maps`.
+O arquivo `MapaStorage.ts` é responsável por ler e salvar os arquivos JSON dos mapas em `data/maps`, além de listar resumos de mapas (`listarMapas`) para uso nas telas de seleção.
 
 ### `backend/src/types/`
 
@@ -73,7 +77,7 @@ O arquivo `Mapa.ts` descreve a estrutura de um mapa, das vagas e de seus pontos 
 
 ### `backend/src/server.ts`
 
-É o ponto de entrada do backend. Ele cria e configura o servidor Express, habilita recursos como JSON e CORS e registra as rotas de mapas.
+É o ponto de entrada do backend. Ele cria e configura o servidor Express, habilita JSON e CORS, serve imagens via `/imagens` e registra as rotas em `/mapas`.
 
 ### `data/`
 
@@ -89,7 +93,7 @@ data/
 
 ### `data/images/`
 
-Armazena imagens de estacionamentos enviadas no cadastro de um mapa.
+Armazena imagens de estacionamentos enviadas no cadastro de um mapa. São servidas pela API em `/imagens/:arquivo`.
 
 ### `data/maps/`
 
@@ -107,27 +111,48 @@ Será usada para arquivos temporários, como recortes de imagens de vagas ou arq
 
 Contém a documentação do projeto.
 
-O arquivo `estrutura-do-projeto.md` explica a finalidade de cada pasta e arquivo principal. Outros documentos podem registrar arquitetura, decisões técnicas, formato dos mapas e referências utilizadas.
+O arquivo `estrutura_projeto.md` explica a finalidade de cada pasta e arquivo principal. Outros documentos podem registrar arquitetura, decisões técnicas, formato dos mapas e referências utilizadas.
 
 ### `frontend/`
 
-Contém a interface web do projeto.
+Contém a interface web em React + Vite usada para mapear vagas.
 
-Atualmente, o arquivo `editor.html` apresenta o editor de vagas, permitindo visualizar uma imagem, marcar as vagas com polígonos e enviar os dados para a API.
+```text
+frontend/
+├─ package.json
+├─ vite.config.ts
+├─ index.html
+├─ public/
+└─ src/
+   ├─ App.tsx
+   ├─ EditorVagas.tsx
+   ├─ api.ts
+   ├─ main.tsx
+   └─ tipos.ts
+```
 
-O frontend atual é estático e não utiliza React, Vue, Angular ou Vite. Por isso, ele não possui `package.json` ou `node_modules` próprios.
+Principais arquivos:
+
+- `package.json`: dependências e scripts do frontend (`dev`, `build`, `lint`, `preview`).
+- `vite.config.ts`: configuração do Vite, incluindo o proxy de `/mapas` e `/imagens` para o backend em `http://localhost:3000`.
+- `src/App.tsx`: tela principal, com seleção/criação de mapas e edição de vagas.
+- `src/EditorVagas.tsx`: renderiza a imagem e as vagas, permitindo marcar e mover pontos.
+- `src/api.ts`: chamadas à API do backend.
+- `src/tipos.ts`: tipos TypeScript do frontend.
+
+Durante `npm run dev`, o frontend sobe em `http://localhost:5173`. Sua pasta `node_modules/` e `dist/` são ignoradas pelo Git.
 
 ### `node_modules/`
 
-Contém as bibliotecas instaladas pelo NPM, como Express, Sharp, Zod, TypeScript e TSX.
+Contém as bibliotecas instaladas pelo NPM, como Express, Sharp, Zod, TypeScript, React e Vite.
 
 Essa pasta é criada automaticamente pelo comando `npm install` e não deve ser enviada ao Git.
 
 ### `dist/`
 
-Contém a versão compilada do backend.
+Contém a versão compilada do backend (e, se builds forem executados na pasta `frontend/`, da interface compilada também).
 
-Os arquivos TypeScript de `backend/src/` são convertidos em JavaScript nessa pasta quando o comando `npm run build` é executado.
+Os arquivos TypeScript de `backend/src/` são convertidos em JavaScript nessa pasta quando o comando `npm run build` é executado na raiz.
 
 Essa pasta não deve ser editada manualmente nem enviada ao Git, porque pode ser recriada a qualquer momento a partir do código-fonte.
 
@@ -165,4 +190,4 @@ Define quais arquivos e pastas não devem ser enviados ao Git, incluindo `node_m
 
 ### `README.md`
 
-Apresenta o projeto, seu objetivo, instruções básicas de instalação e execução e um link para a documentação em `docs/`.
+Apresenta o projeto, seu objetivo, instruções básicas de instalação e execução, URLs de uso e um link para a documentação em `docs/`.

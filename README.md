@@ -8,19 +8,21 @@ O **APP Vaga Livre** é um projeto de estacionamento inteligente que utiliza ima
 
 A etapa implementada é o **mapeamento manual de vagas em uma imagem de referência**.
 
-O sistema atualmente permite:
+A interface web agora é uma aplicação React + Vite, servida separadamente do backend. Ela permite:
 
-- Cadastrar uma imagem JPG ou PNG de um estacionamento.
-- Criar um mapa associado à imagem cadastrada.
-- Exibir a imagem em um editor web provisório.
-- Criar, ajustar e excluir vagas sobre a imagem.
+- Cadastrar uma imagem JPG ou PNG de um estacionamento e criar um mapa.
+- Listar e abrir mapas já cadastrados.
+- Exibir a imagem em um editor web e marcar as vagas com polígonos.
+- Criar, ajustar, renomear e excluir vagas sobre a imagem.
 - Representar cada vaga com um polígono de exatamente quatro pontos.
 - Salvar as coordenadas dos pontos normalizadas entre 0 e 1.
 - Armazenar imagens e mapas localmente em arquivos JSON.
 
-A detecção de carros, a classificação de vagas como livres ou ocupadas, a atualização em tempo real e a interface definitiva ainda não foram implementadas.
+A detecção de carros, a classificação de vagas como livres ou ocupadas, a atualização em tempo real e a interface final de monitoramento ainda não foram implementadas.
 
 ## Tecnologias
+
+Backend:
 
 - Node.js
 - TypeScript
@@ -28,17 +30,25 @@ A detecção de carros, a classificação de vagas como livres ou ocupadas, a at
 - Multer
 - Sharp
 - Zod
-- HTML, CSS e JavaScript puro
+
+Frontend:
+
+- React
+- Vite
+- TypeScript
+- HTML, CSS e SVG
 
 ## Pré-requisitos
 
 - [Node.js](https://nodejs.org/) e NPM instalados.
 - Uma imagem JPG ou PNG de estacionamento para criar um mapa.
-- Terminal aberto na raiz do projeto.
+- Terminais abertos na raiz do projeto (backend) e em `frontend/` (interface).
 
 Não é necessário instalar banco de dados nesta etapa.
 
 ## Instalação e execução
+
+### Backend
 
 Na raiz do projeto, instale as dependências:
 
@@ -56,11 +66,33 @@ O servidor ficará disponível em:
 
 ```text
 API:       http://localhost:3000
-Editor:    http://localhost:3000/editor
 Status:    http://localhost:3000/saude
 ```
 
 Para interromper o servidor, pressione `Ctrl + C`.
+
+### Frontend (interface React + Vite)
+
+Em outro terminal, entre na pasta do frontend e instale as dependências:
+
+```bat
+cd frontend
+npm install
+```
+
+Inicie o frontend em modo de desenvolvimento:
+
+```bat
+npm run dev
+```
+
+A interface ficará disponível em:
+
+```text
+Frontend:  http://localhost:5173
+```
+
+O Vite faz proxy de `/mapas` e `/imagens` para `http://localhost:3000`, então o backend precisa estar rodando.
 
 ## Compilação
 
@@ -80,22 +112,29 @@ npm start
 
 A pasta `dist/` é gerada automaticamente e não deve ser editada manualmente.
 
-## Uso do editor
+Para a interface, os scripts equivalentes são, dentro de `frontend/`:
 
-1. Inicie o backend com `npm run dev`.
-2. Cadastre uma imagem e crie um mapa.
-3. Abra `http://localhost:3000/editor`.
-4. Informe o ID do mapa e clique em **Carregar mapa**.
+```bat
+npm run build
+npm run preview
+```
+
+## Uso da interface
+
+1. Inicie o backend com `npm run dev` na raiz.
+2. Inicie o frontend com `npm run dev` em `frontend/`.
+3. Abra `http://localhost:5173`.
+4. Selecione um mapa existente ou crie um novo informando ID, nome e imagem.
 5. Clique em **Nova vaga**.
 6. Marque exatamente os quatro cantos da vaga.
-7. Clique em **Concluir vaga**, informe seu nome e salve.
-8. Ajuste ou exclua vagas quando necessário e clique em **Salvar vagas**.
+7. Informe o nome da vaga e clique em **Salvar vagas**.
+8. Ajuste, renomeie ou exclua vagas quando necessário e clique novamente em **Salvar vagas**.
 
 Cada vaga possui um `ID`, um `Nome` e exatamente quatro pontos normalizados entre 0 e 1.
 
 ## Dados locais
 
-Ao iniciar o servidor, a aplicação cria automaticamente:
+Ao iniciar o servidor, a aplicação cria automaticamente, na raiz do projeto:
 
 ```text
 data/
@@ -112,7 +151,11 @@ data/
 | `data/occupancy/` | Reservada para resultados futuros de ocupação                   |
 | `data/temp/`      | Reservada para arquivos temporários do processamento de imagens |
 
-A pasta `data/` é ignorada pelo Git porque contém arquivos criados localmente durante a execução.
+A pasta `data/` é ignorada pelo Git porque contém arquivos criados localmente durante a execução. Os caminhos ficam centralizados em `backend/src/config/paths.ts`, o que mantém a execução consistente mesmo com `npm start`.
+
+## Imagens
+
+As imagens cadastradas são salvas em `data/images/` e servidas pela API em `/imagens/:arquivo`. A interface React usa esse endpoint para exibir a imagem de referência de cada mapa.
 
 ## Dataset de exemplo
 
@@ -120,18 +163,18 @@ O dataset [PKLot no Roboflow](https://public.roboflow.com/object-detection/pklot
 
 O dataset deve permanecer separado da pasta `data/`. Para o mapeamento, basta escolher uma imagem de referência por câmera ou cenário; não é necessário cadastrar todas as imagens do dataset.
 
-Antes de usar o dataset em relatórios ou apresentações, consulte os termos de licença e a atribuição necessária na [página do PKLot no Roboflow](https://public.roboflow.com/object-detection/pklot). [292]
+Antes de usar o dataset em relatórios ou apresentações, consulte os termos de licença e a atribuição necessária na [página do PKLot no Roboflow](https://public.roboflow.com/object-detection/pklot).
 
 ## API disponível
 
 | Método | Rota                | Função                                     |
 | ------ | ------------------- | ------------------------------------------ |
 | `GET`  | `/saude`            | Verifica se a API está respondendo         |
+| `GET`  | `/mapas`            | Lista mapas cadastrados                   |
 | `POST` | `/mapas`            | Cadastra uma imagem e cria um mapa vazio   |
 | `GET`  | `/mapas/:ID`        | Retorna um mapa cadastrado                 |
 | `PUT`  | `/mapas/:ID/vagas`  | Atualiza a lista completa de vagas do mapa |
-| `GET`  | `/imagens/:arquivo` | Exibe uma imagem cadastrada                |
-| `GET`  | `/editor`           | Abre o editor provisório de vagas          |
+| `GET`  | `/imagens/:arquivo` | Exibe uma imagem cadastrada               |
 
 No `POST /mapas`, envie `multipart/form-data` com `ID`, `Nome` e `Imagem`.
 
@@ -156,7 +199,9 @@ PI---Monitor-de-Vagas/
 │  └─ temp/
 ├─ docs/
 ├─ frontend/
-│  └─ editor.html
+│  ├─ package.json
+│  ├─ vite.config.ts
+│  └─ src/
 ├─ .gitignore
 ├─ package.json
 ├─ package-lock.json
@@ -166,9 +211,11 @@ PI---Monitor-de-Vagas/
 
 Para uma descrição detalhada da estrutura e da responsabilidade de cada pasta, consulte:
 
-- [`docs/estrutura-do-projeto.md`](docs/estrutura-do-projeto.md)
+- [`docs/estrutura_projeto.md`](docs/estrutura_projeto.md)
 
 ## Comandos disponíveis
+
+### Backend (raiz)
 
 | Comando         | Finalidade                                   |
 | --------------- | -------------------------------------------- |
@@ -176,6 +223,15 @@ Para uma descrição detalhada da estrutura e da responsabilidade de cada pasta,
 | `npm run dev`   | Executa o backend em modo de desenvolvimento |
 | `npm run build` | Compila o TypeScript para a pasta `dist/`    |
 | `npm start`     | Executa a versão compilada do backend        |
+
+### Frontend (`frontend/`)
+
+| Comando         | Finalidade                                   |
+| --------------- | -------------------------------------------- |
+| `npm install`   | Instala as dependências do frontend         |
+| `npm run dev`   | Executa a interface em modo de desenvolvimento |
+| `npm run build` | Compila a interface para `frontend/dist/`    |
+| `npm run preview` | Exibe a build de produção localmente      |
 
 ## Próximas etapas
 
