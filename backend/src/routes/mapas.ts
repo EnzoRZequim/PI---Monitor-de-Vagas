@@ -5,11 +5,11 @@ import multer = require("multer");
 import sharp = require("sharp");
 import { z } from "zod";
 import { badRequest, conflict, created, internalError, notFound, ok, sendResponse, updated } from "../common/ResponseHelper";
-import { buscarMapa, criarMapa, salvarMapa } from "../services/MapaStorage";
+import { IMAGES_DIR } from "../config/paths";
+import { buscarMapa, criarMapa, listarMapas, salvarMapa } from "../services/MapaStorage";
 import type { Mapa } from "../types/Mapa";
 
 const router = Router();
-const pastaImagens = path.resolve("data", "images");
 const formatoID = /^[a-zA-Z0-9-]+$/;
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -22,8 +22,8 @@ const formatoVagas = z.object({
     Pontos: z.array(z.object({
       X: z.number().min(0).max(1),
       Y: z.number().min(0).max(1)
-    })).min(3)
-  })).refine(vagas => new Set(vagas.map(vaga => vaga.ID)).size === vagas.length)
+    })).length(4, "Cada vaga deve ter exatamente 4 pontos.")
+  })).refine(vagas => new Set(vagas.map(vaga => vaga.ID)).size === vagas.length, "Os IDs das vagas devem ser únicos.")
 });
 
 router.post("/", upload.single("Imagem"), async (req, res) => {
@@ -62,12 +62,12 @@ router.post("/", upload.single("Imagem"), async (req, res) => {
   }
 
   const Imagem = `${ID}.${extensao}`;
-  const caminhoImagem = path.join(pastaImagens, Imagem);
+  const caminhoImagem = path.join(IMAGES_DIR, Imagem);
   const mapa: Mapa = { ID, Nome: Nome.trim(), Imagem, Largura, Altura, Vagas: [] };
   let imagemCriada = false;
 
   try {
-    await mkdir(pastaImagens, { recursive: true });
+    await mkdir(IMAGES_DIR, { recursive: true });
     await writeFile(caminhoImagem, req.file.buffer, { flag: "wx" });
     imagemCriada = true;
 
@@ -86,6 +86,16 @@ router.post("/", upload.single("Imagem"), async (req, res) => {
     }
 
     console.error("Erro ao criar mapa:", erro);
+    return sendResponse(res, internalError());
+  }
+});
+
+router.get("/", async (_req, res) => {
+  try {
+    const mapas = await listarMapas();
+    return sendResponse(res, ok("Mapas encontrados.", mapas));
+  } catch (erro) {
+    console.error("Erro ao listar mapas:", erro);
     return sendResponse(res, internalError());
   }
 });
@@ -109,7 +119,7 @@ router.put("/:ID/vagas", async (req, res) => {
   if (!ID || !formatoID.test(ID)) return sendResponse(res, badRequest("ID inválido. Use letras, números e hífens."));
 
   const resultado = formatoVagas.safeParse(req.body);
-  if (!resultado.success) return sendResponse(res, badRequest("Vagas inválidas: informe IDs únicos e pelo menos 3 pontos por vaga, com X e Y entre 0 e 1."));
+  if (!resultado.success) return sendResponse(res, badRequest("Vagas inválidas: informe IDs únicos e exatamente 4 pontos por vaga, com X e Y entre 0 e 1."));
 
   try {
     const mapa = await buscarMapa(ID);

@@ -16,7 +16,7 @@ app.use("/mapas", mapasRouter);
 app.use("/imagens", express.static(IMAGES_DIR));
 
 app.get("/editor", (_req, res) => {
-  res.sendFile(path.resolve("frontend", "editor.html"));
+  res.sendFile(path.resolve("frontend-old", "editor.html"));
 });
 
 app.get("/saude", (_req, res) => {

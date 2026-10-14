@@ -1,0 +1,86 @@
+.app {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.paineis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.painel {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+}
+
+.painel h2 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+
+input,
+select,
+button {
+  padding: 8px;
+  font: inherit;
+}
+
+.mensagem {
+  min-height: 24px;
+}
+
+.controles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.area {
+  max-width: 900px;
+}
+
+.editor-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #eee;
+  touch-action: none;
+}
+
+.vaga {
+  fill: #00a86b55;
+  stroke: #00804f;
+  stroke-width: 2;
+  cursor: pointer;
+}
+
+.vaga.selecionada {
+  fill: #0088ff55;
+  stroke: #0066cc;
+}
+
+.rascunho {
+  fill: none;
+  stroke: #d08000;
+  stroke-width: 2;
+}
+
+.ponto {
+  fill: #fff;
+  stroke: #0066cc;
+  stroke-width: 2;
+  cursor: grab;
+}
+
+.rascunho-ponto {
+  stroke: #d08000;
+  cursor: default;
+}
