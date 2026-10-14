@@ -1,4 +1,3 @@
-import path from "node:path";
 import express = require("express");
 
 import { ensureDirectories } from "./config/ensureDirectories";
@@ -15,10 +14,6 @@ app.use("/mapas", mapasRouter);
 
 app.use("/imagens", express.static(IMAGES_DIR));
 
-app.get("/editor", (_req, res) => {
-  res.sendFile(path.resolve("frontend-old", "editor.html"));
-});
-
 app.get("/saude", (_req, res) => {
   res.json({ status: "ok" });
 });
@@ -28,7 +23,6 @@ async function iniciarServidor() {
 
   app.listen(porta, () => {
     console.log(`API disponível em http://localhost:${porta}`);
-    console.log(`Editor de vagas: http://localhost:${porta}/editor`);
     console.log(`Status da API: http://localhost:${porta}/saude`);
   });
 }
