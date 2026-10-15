@@ -7,7 +7,8 @@ import { cores, espaco, fontes, gradientes, tipografia } from '@/theme';
 type Item = {
   titulo: string;
   icone: keyof typeof Feather.glyphMap;
-  onPress: () => void;
+  // Sem onPress o item aparece, mas não faz nada (tela ainda não criada)
+  onPress?: () => void;
   // Ação destrutiva, como "Sair" (fica vermelha)
   perigo?: boolean;
 };

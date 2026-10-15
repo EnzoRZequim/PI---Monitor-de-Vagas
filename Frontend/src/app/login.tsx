@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { useRef } from 'react';
 import { KeyboardAvoidingView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -73,8 +73,8 @@ export default function TelaLogin() {
 
             <View style={styles.botoes}>
               <BotaoIcone tipo="secundario" titulo="Voltar" icone="rotate-ccw" onPress={() => voltar('/')} />
-              {/* Sem ação até o backend ter autenticação */}
-              <BotaoIcone titulo="Enviar" icone="send" />
+              {/* Sem autenticação no backend ainda: entra direto na área do parceiro */}
+              <BotaoIcone titulo="Enviar" icone="send" onPress={() => router.replace('/area-parceiro')} />
             </View>
           </View>
         </ScrollView>

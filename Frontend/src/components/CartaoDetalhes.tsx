@@ -17,38 +17,45 @@ type Props = {
 export function CartaoDetalhes({ titulo, detalhes, children, onPress }: Props) {
   const [hover, setHover] = useState(false);
 
+  const cartao = (
+    <CaixaGradiente
+      // O Figma não tem hover para o cartão; usa a mesma borda dos campos em foco
+      borda={onPress && hover ? gradientes.foco.borda : gradientes.neutro.borda}
+      fundo={cores.superficie}
+      raio={raio.cartao}
+      estiloConteudo={styles.conteudo}
+    >
+      <View style={styles.textos}>
+        <Text style={styles.titulo} numberOfLines={1}>
+          {titulo}
+        </Text>
+        <View style={styles.detalhes}>
+          {detalhes.map((detalhe, i) => (
+            <View key={i} style={styles.detalhes}>
+              {i > 0 && <Text style={styles.detalhe}>•</Text>}
+              <Text style={styles.detalhe} numberOfLines={1}>
+                {detalhe}
+              </Text>
+            </View>
+          ))}
+        </View>
+      </View>
+      {children}
+    </CaixaGradiente>
+  );
+
+  // Sem onPress não envolve em Pressable: na web um Pressable desabilitado também desabilita os
+  // botões dentro dele (ex.: editar e excluir do CartaoLocalParceiro)
+  if (!onPress) return cartao;
+
   return (
     <Pressable
       onPress={onPress}
-      disabled={!onPress}
       onHoverIn={() => setHover(true)}
       onHoverOut={() => setHover(false)}
-      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityRole="button"
     >
-      <CaixaGradiente
-        // O Figma não tem hover para o cartão; usa a mesma borda dos campos em foco
-        borda={onPress && hover ? gradientes.foco.borda : gradientes.neutro.borda}
-        fundo={cores.superficie}
-        raio={raio.cartao}
-        estiloConteudo={styles.conteudo}
-      >
-        <View style={styles.textos}>
-          <Text style={styles.titulo} numberOfLines={1}>
-            {titulo}
-          </Text>
-          <View style={styles.detalhes}>
-            {detalhes.map((detalhe, i) => (
-              <View key={i} style={styles.detalhes}>
-                {i > 0 && <Text style={styles.detalhe}>•</Text>}
-                <Text style={styles.detalhe} numberOfLines={1}>
-                  {detalhe}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
-        {children}
-      </CaixaGradiente>
+      {cartao}
     </Pressable>
   );
 }

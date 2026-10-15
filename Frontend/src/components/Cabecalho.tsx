@@ -4,10 +4,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Botao } from '@/components/Botao';
 import { Logo } from '@/components/Logo';
+import { NavegacaoParceiro, type SecaoParceiro } from '@/components/NavegacaoParceiro';
 import { cores, espaco, LARGURA_CONTEUDO, tipografia } from '@/theme';
 
+type Props = {
+  mostrarAcoesParceiro?: boolean;
+  // Dentro da área do parceiro: mostra a navegação dela, destacando esta seção
+  secaoParceiro?: SecaoParceiro;
+};
+
 // Barra superior do desktop. No mobile os botões de parceiro ficam no rodapé da tela inicial.
-export function Cabecalho({ mostrarAcoesParceiro = false }: { mostrarAcoesParceiro?: boolean }) {
+export function Cabecalho({ mostrarAcoesParceiro = false, secaoParceiro }: Props) {
   // Em tablets a barra fica abaixo da barra de status; na web o recuo é 0
   const { top } = useSafeAreaInsets();
 
@@ -22,6 +29,7 @@ export function Cabecalho({ mostrarAcoesParceiro = false }: { mostrarAcoesParcei
         </Link>
 
         {mostrarAcoesParceiro && <AcoesParceiro style={styles.acoes} />}
+        {secaoParceiro && <NavegacaoParceiro ativa={secaoParceiro} />}
       </View>
     </View>
   );
