@@ -1,14 +1,20 @@
 # APP Vaga Livre 🅿️
 
+
 **Sua vaga, sem voltas.**
+
 
 O **APP Vaga Livre** é um projeto de estacionamento inteligente que utiliza imagens de câmeras para identificar vagas livres e ocupadas, sem exigir sensores dedicados em cada vaga.
 
+
 ## Estado atual
+
 
 A etapa implementada é o **mapeamento manual de vagas em uma imagem de referência**.
 
+
 A interface web agora é uma aplicação React + Vite, servida separadamente do backend. Ela permite:
+
 
 - Cadastrar uma imagem JPG ou PNG de um estacionamento e criar um mapa.
 - Listar e abrir mapas já cadastrados.
@@ -18,11 +24,15 @@ A interface web agora é uma aplicação React + Vite, servida separadamente do 
 - Salvar as coordenadas dos pontos normalizadas entre 0 e 1.
 - Armazenar imagens e mapas localmente em arquivos JSON.
 
+
 A detecção de carros, a classificação de vagas como livres ou ocupadas, a atualização em tempo real e a interface final de monitoramento ainda não foram implementadas.
+
 
 ## Tecnologias
 
+
 Backend:
+
 
 - Node.js
 - TypeScript
@@ -30,96 +40,157 @@ Backend:
 - Multer
 - Sharp
 - Zod
+- ONNX Runtime (`onnxruntime-node`)
+
 
 Frontend:
+
 
 - React
 - Vite
 - TypeScript
 - HTML, CSS e SVG
 
+
 ## Pré-requisitos
 
+
 - [Node.js](https://nodejs.org/) e NPM instalados.
+- [Python 3](https://www.python.org/) com o pacote `ultralytics` instalado, apenas para gerar o modelo ONNX uma única vez.
 - Uma imagem JPG ou PNG de estacionamento para criar um mapa.
 - Terminais abertos na raiz do projeto (backend) e em `frontend/` (interface).
 
+
 Não é necessário instalar banco de dados nesta etapa.
+
 
 ## Instalação e execução
 
+
 ### Backend
 
+
 Na raiz do projeto, instale as dependências:
+
 
 ```bat
 npm install
 ```
 
+
+### Modelo de detecção (uma única vez)
+
+
+Gere o modelo ONNX usado pelo backend. Na raiz do projeto:
+
+
+```bat
+python -c "from ultralytics import YOLO; YOLO('yolov8n.pt').export(format='onnx', imgsz=640)"
+```
+
+
+O comando baixa o `yolov8n.pt` e gera o `yolov8n.onnx` na pasta atual. Mova o arquivo para `data/models/`:
+
+
+```bat
+mkdir data\models
+move yolov8n.onnx data\models\
+```
+
+
+Esse passo só é necessário uma vez por máquina. O arquivo `.onnx` não vai para o Git.
+
+
+### Iniciar o backend
+
+
 Inicie o backend em modo de desenvolvimento:
+
 
 ```bat
 npm run dev
 ```
 
+
 O servidor ficará disponível em:
+
 
 ```text
 API:       http://localhost:3000
 Status:    http://localhost:3000/saude
 ```
 
+
 Para interromper o servidor, pressione `Ctrl + C`.
+
 
 ### Frontend (interface React + Vite)
 
+
 Em outro terminal, entre na pasta do frontend e instale as dependências:
+
 
 ```bat
 cd frontend
 npm install
 ```
 
+
 Inicie o frontend em modo de desenvolvimento:
+
 
 ```bat
 npm run dev
 ```
 
+
 A interface ficará disponível em:
+
 
 ```text
 Frontend:  http://localhost:5173
 ```
 
+
 O Vite faz proxy de `/mapas` e `/imagens` para `http://localhost:3000`, então o backend precisa estar rodando.
+
 
 ## Compilação
 
+
 Para verificar os tipos e gerar a versão compilada do backend:
+
 
 ```bat
 npm run build
 ```
 
+
 O comando cria a pasta `dist/`, contendo os arquivos JavaScript compilados a partir de `backend/src/`.
 
+
 Para executar a versão compilada:
+
 
 ```bat
 npm start
 ```
 
+
 A pasta `dist/` é gerada automaticamente e não deve ser editada manualmente.
 
+
 Para a interface, os scripts equivalentes são, dentro de `frontend/`:
+
 
 ```bat
 npm run build
 npm run preview
 ```
 
+
 ## Uso da interface
+
 
 1. Inicie o backend com `npm run dev` na raiz.
 2. Inicie o frontend com `npm run dev` em `frontend/`.
@@ -130,57 +201,80 @@ npm run preview
 7. Informe o nome da vaga e clique em **Salvar vagas**.
 8. Ajuste, renomeie ou exclua vagas quando necessário e clique novamente em **Salvar vagas**.
 
+
 Cada vaga possui um `ID`, um `Nome` e exatamente quatro pontos normalizados entre 0 e 1.
+
 
 ## Dados locais
 
-Ao iniciar o servidor, a aplicação cria automaticamente, na raiz do projeto:
+
+Ao iniciar o servidor (`npm run dev` na raiz ou `npm start`), a aplicação cria automaticamente, na raiz do projeto, a pasta `data/` e todas as subpastas abaixo, caso ainda não existam. **Não é necessário criar essas pastas manualmente.**
+
 
 ```text
 data/
 ├─ images/
 ├─ maps/
+├─ models/
 ├─ occupancy/
 └─ temp/
 ```
 
-| Pasta             | Finalidade                                                      |
-| ----------------- | --------------------------------------------------------------- |
-| `data/images/`    | Imagens de referência cadastradas                               |
-| `data/maps/`      | Arquivos JSON contendo mapas e vagas                            |
-| `data/occupancy/` | Reservada para resultados futuros de ocupação                   |
-| `data/temp/`      | Reservada para arquivos temporários do processamento de imagens |
 
-A pasta `data/` é ignorada pelo Git porque contém arquivos criados localmente durante a execução. Os caminhos ficam centralizados em `backend/src/config/paths.ts`, o que mantém a execução consistente mesmo com `npm start`.
+| Pasta              | Finalidade                                                        |
+| ------------------ | ----------------------------------------------------------------- |
+| `data/images/`     | Imagens de referência cadastradas                                 |
+| `data/maps/`       | Arquivos JSON contendo mapas e vagas                              |
+| `data/models/`     | Modelo de detecção em formato ONNX (`yolov8n.onnx`)               |
+| `data/occupancy/`  | Resultados de ocupação das vagas                                  |
+| `data/temp/`       | Arquivos temporários do processamento de imagens                  |
+
+
+A pasta `data/` é ignorada pelo Git porque contém arquivos criados localmente durante a execução, incluindo o modelo de IA. Por isso, ao clonar o projeto em outra máquina, basta iniciar o servidor para que a estrutura seja recriada e, em seguida, colocar o arquivo `yolov8n.onnx` em `data/models/`.
+
+
+Os caminhos ficam centralizados em `backend/src/config/paths.ts`, o que mantém a execução consistente mesmo com `npm start`.
+
 
 ## Imagens
 
+
 As imagens cadastradas são salvas em `data/images/` e servidas pela API em `/imagens/:arquivo`. A interface React usa esse endpoint para exibir a imagem de referência de cada mapa.
+
 
 ## Dataset de exemplo
 
+
 O dataset [PKLot no Roboflow](https://public.roboflow.com/object-detection/pklot) pode ser usado como fonte opcional de imagens para teste e, futuramente, para avaliação da detecção de ocupação.
+
 
 O dataset deve permanecer separado da pasta `data/`. Para o mapeamento, basta escolher uma imagem de referência por câmera ou cenário; não é necessário cadastrar todas as imagens do dataset.
 
+
 Antes de usar o dataset em relatórios ou apresentações, consulte os termos de licença e a atribuição necessária na [página do PKLot no Roboflow](https://public.roboflow.com/object-detection/pklot).
 
+
 ## API disponível
+
 
 | Método | Rota                | Função                                     |
 | ------ | ------------------- | ------------------------------------------ |
 | `GET`  | `/saude`            | Verifica se a API está respondendo         |
-| `GET`  | `/mapas`            | Lista mapas cadastrados                   |
+| `GET`  | `/mapas`            | Lista mapas cadastrados                    |
 | `POST` | `/mapas`            | Cadastra uma imagem e cria um mapa vazio   |
 | `GET`  | `/mapas/:ID`        | Retorna um mapa cadastrado                 |
 | `PUT`  | `/mapas/:ID/vagas`  | Atualiza a lista completa de vagas do mapa |
-| `GET`  | `/imagens/:arquivo` | Exibe uma imagem cadastrada               |
+| `GET`  | `/imagens/:arquivo` | Exibe uma imagem cadastrada                |
+
 
 No `POST /mapas`, envie `multipart/form-data` com `ID`, `Nome` e `Imagem`.
 
+
 No `PUT /mapas/:ID/vagas`, envie um JSON com a lista completa de vagas. Cada vaga deve possuir `ID`, `Nome` e exatamente quatro `Pontos`, com `X` e `Y` entre 0 e 1.
 
+
 ## Estrutura do projeto
+
 
 ```text
 PI---Monitor-de-Vagas/
@@ -195,6 +289,7 @@ PI---Monitor-de-Vagas/
 ├─ data/
 │  ├─ images/
 │  ├─ maps/
+│  ├─ models/
 │  ├─ occupancy/
 │  └─ temp/
 ├─ docs/
@@ -209,37 +304,46 @@ PI---Monitor-de-Vagas/
 └─ tsconfig.json
 ```
 
+
 Para uma descrição detalhada da estrutura e da responsabilidade de cada pasta, consulte:
+
 
 - [`docs/estrutura_projeto.md`](docs/estrutura_projeto.md)
 
+
 ## Comandos disponíveis
+
 
 ### Backend (raiz)
 
-| Comando         | Finalidade                                   |
-| --------------- | -------------------------------------------- |
-| `npm install`   | Instala as dependências do projeto           |
-| `npm run dev`   | Executa o backend em modo de desenvolvimento |
-| `npm run dev:all` | Executa backend e frontend juntos         |
-| `npm run dev:frontend` | Executa somente o frontend            |
-| `npm run build` | Compila o TypeScript para a pasta `dist/`    |
-| `npm start`     | Executa a versão compilada do backend        |
+
+| Comando                | Finalidade                                   |
+| ---------------------- | -------------------------------------------- |
+| `npm install`          | Instala as dependências do projeto           |
+| `npm run dev`          | Executa o backend em modo de desenvolvimento |
+| `npm run dev:all`      | Executa backend e frontend juntos            |
+| `npm run dev:frontend` | Executa somente o frontend                   |
+| `npm run build`        | Compila o TypeScript para a pasta `dist/`    |
+| `npm start`            | Executa a versão compilada do backend        |
+
 
 ### Frontend (`frontend/`)
 
-| Comando         | Finalidade                                   |
-| --------------- | -------------------------------------------- |
-| `npm install`   | Instala as dependências do frontend         |
-| `npm run dev`   | Executa a interface em modo de desenvolvimento |
-| `npm run build` | Compila a interface para `frontend/dist/`    |
-| `npm run preview` | Exibe a build de produção localmente      |
+
+| Comando           | Finalidade                                     |
+| ----------------- | ---------------------------------------------- |
+| `npm install`     | Instala as dependências do frontend            |
+| `npm run dev`     | Executa a interface em modo de desenvolvimento |
+| `npm run build`   | Compila a interface para `frontend/dist/`      |
+| `npm run preview` | Exibe a build de produção localmente           |
+
 
 ## Próximas etapas
 
+
 1. Aprimorar a usabilidade do editor de vagas.
-2. Processar imagens de estacionamento.
-3. Identificar veículos nas regiões mapeadas.
+2. Detectar veículos em imagens usando um modelo YOLO em ONNX.
+3. Associar veículos detectados às vagas mapeadas.
 4. Classificar vagas como livres ou ocupadas.
-5. Armazenar resultados de ocupação.
+5. Armazenar resultados de ocupação em `data/occupancy/`.
 6. Integrar uma interface para exibir as vagas disponíveis.
