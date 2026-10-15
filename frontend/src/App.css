@@ -84,3 +84,32 @@ button {
   stroke: #d08000;
   cursor: default;
 }
+
+.abas {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.aba {
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  cursor: pointer;
+}
+
+.aba.ativa {
+  background: #0066cc;
+  color: #fff;
+  border-color: #0066cc;
+}
+
+.vaga.ocupada {
+  fill: #dc354555;
+  stroke: #dc3545;
+}
+
+.vaga.livre {
+  fill: #19875455;
+  stroke: #198754;
+}

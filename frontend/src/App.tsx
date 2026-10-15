@@ -2,16 +2,19 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { buscarMapa, criarMapa, listarMapas, salvarVagas } from "./api";
 import { EditorVagas } from "./EditorVagas";
+import { MonitorVagas } from "./MonitorVagas";
 import type { Mapa, Ponto, ResumoMapa, Vaga } from "./tipos";
 import "./App.css";
 
 const ID_VALIDO = /^[a-zA-Z0-9-]+$/;
+type Aba = "editor" | "monitor";
 
 function textoDoErro(erro: unknown): string {
   return erro instanceof Error ? erro.message : "Ocorreu um erro inesperado.";
 }
 
 export default function App() {
+  const [aba, setAba] = useState<Aba>("editor");
   const [mapas, setMapas] = useState<ResumoMapa[]>([]);
   const [mapa, setMapa] = useState<Mapa | null>(null);
   const [vagas, setVagas] = useState<Vaga[]>([]);
@@ -132,7 +135,8 @@ export default function App() {
       ID: `vaga-${crypto.randomUUID()}`,
       Nome: `A${vagas.length + 1}`,
       Pontos: pontos
-    };
+    }
+
 
     setVagas([...vagas, vaga]);
     setRascunho(null);
@@ -188,88 +192,109 @@ export default function App() {
 
   return (
     <main className="app">
-      <h1>Mapeamento de vagas</h1>
+      <h1>APP Vaga Livre</h1>
 
-      <section className="paineis">
-        <div className="painel">
-          <h2>Abrir mapa existente</h2>
-          <select
-            value={mapa?.ID ?? ""}
-            onChange={(evento) => void abrirExistente(evento.target.value)}
-          >
-            <option value="" disabled>
-              {mapas.length ? "Selecione um mapa" : "Nenhum mapa cadastrado"}
-            </option>
-            {mapas.map((item) => (
-              <option key={item.ID} value={item.ID}>
-                {item.Nome} ({item.QuantidadeVagas} vagas)
-              </option>
-            ))}
-          </select>
-        </div>
+      <nav className="abas">
+        <button
+          className={aba === "editor" ? "aba ativa" : "aba"}
+          onClick={() => setAba("editor")}
+        >
+          Editor de mapas
+        </button>
+        <button
+          className={aba === "monitor" ? "aba ativa" : "aba"}
+          onClick={() => setAba("monitor")}
+        >
+          Monitor de vagas
+        </button>
+      </nav>
 
-        <form className="painel" onSubmit={(evento) => void aoCriar(evento)}>
-          <h2>Novo mapa a partir de uma imagem</h2>
-          <input
-            placeholder="ID (ex.: estacionamento-02)"
-            value={novoID}
-            onChange={(evento) => setNovoID(evento.target.value)}
-          />
-          <input
-            placeholder="Nome (ex.: Estacionamento 02)"
-            value={novoNome}
-            onChange={(evento) => setNovoNome(evento.target.value)}
-          />
-          <input
-            key={chaveArquivo}
-            type="file"
-            accept="image/jpeg,image/png"
-            onChange={(evento) => setNovaImagem(evento.target.files?.[0] ?? null)}
-          />
-          <button type="submit" disabled={ocupado}>
-            {ocupado ? "Criando..." : "Criar mapa"}
-          </button>
-        </form>
-      </section>
-
-      <p className="mensagem">{mensagem}</p>
-
-      {mapa ? (
-        <>
-          <div className="controles">
-            <button onClick={iniciarDesenho}>Nova vaga</button>
-            <button onClick={cancelarDesenho} disabled={!rascunho}>
-              Cancelar desenho
-            </button>
-            <button onClick={excluirSelecionada} disabled={!selecionada}>
-              Excluir selecionada
-            </button>
-            <button onClick={() => void salvar()} disabled={!alterado}>
-              Salvar vagas
-            </button>
-            {selecionada && (
-              <input
-                aria-label="Nome da vaga selecionada"
-                value={selecionada.Nome}
-                onChange={(evento) => renomearSelecionada(evento.target.value)}
-              />
-            )}
-          </div>
-
-          <div className="area">
-            <EditorVagas
-              mapa={mapa}
-              vagas={vagas}
-              selecionadaID={selecionadaID}
-              rascunho={rascunho}
-              aoSelecionar={setSelecionadaID}
-              aoMoverPonto={moverPonto}
-              aoAdicionarPonto={adicionarPonto}
-            />
-          </div>
-        </>
+      {aba === "monitor" ? (
+        <MonitorVagas mapas={mapas} />
       ) : (
-        <p>Abra um mapa existente ou crie um novo a partir de uma imagem.</p>
+        <>
+          <section className="paineis">
+            <div className="painel">
+              <h2>Abrir mapa existente</h2>
+              <select
+                value={mapa?.ID ?? ""}
+                onChange={(evento) => void abrirExistente(evento.target.value)}
+              >
+                <option value="" disabled>
+                  {mapas.length ? "Selecione um mapa" : "Nenhum mapa cadastrado"}
+                </option>
+                {mapas.map((item) => (
+                  <option key={item.ID} value={item.ID}>
+                    {item.Nome} ({item.QuantidadeVagas} vagas)
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <form className="painel" onSubmit={(evento) => void aoCriar(evento)}>
+              <h2>Novo mapa a partir de uma imagem</h2>
+              <input
+                placeholder="ID (ex.: estacionamento-02)"
+                value={novoID}
+                onChange={(evento) => setNovoID(evento.target.value)}
+              />
+              <input
+                placeholder="Nome (ex.: Estacionamento 02)"
+                value={novoNome}
+                onChange={(evento) => setNovoNome(evento.target.value)}
+              />
+              <input
+                key={chaveArquivo}
+                type="file"
+                accept="image/jpeg,image/png"
+                onChange={(evento) => setNovaImagem(evento.target.files?.[0] ?? null)}
+              />
+              <button type="submit" disabled={ocupado}>
+                {ocupado ? "Criando..." : "Criar mapa"}
+              </button>
+            </form>
+          </section>
+
+          <p className="mensagem">{mensagem}</p>
+
+          {mapa ? (
+            <>
+              <div className="controles">
+                <button onClick={iniciarDesenho}>Nova vaga</button>
+                <button onClick={cancelarDesenho} disabled={!rascunho}>
+                  Cancelar desenho
+                </button>
+                <button onClick={excluirSelecionada} disabled={!selecionada}>
+                  Excluir selecionada
+                </button>
+                <button onClick={() => void salvar()} disabled={!alterado}>
+                  Salvar vagas
+                </button>
+                {selecionada && (
+                  <input
+                    aria-label="Nome da vaga selecionada"
+                    value={selecionada.Nome}
+                    onChange={(evento) => renomearSelecionada(evento.target.value)}
+                  />
+                )}
+              </div>
+
+              <div className="area">
+                <EditorVagas
+                  mapa={mapa}
+                  vagas={vagas}
+                  selecionadaID={selecionadaID}
+                  rascunho={rascunho}
+                  aoSelecionar={setSelecionadaID}
+                  aoMoverPonto={moverPonto}
+                  aoAdicionarPonto={adicionarPonto}
+                />
+              </div>
+            </>
+          ) : (
+            <p>Abra um mapa existente ou crie um novo a partir de uma imagem.</p>
+          )}
+        </>
       )}
     </main>
   );

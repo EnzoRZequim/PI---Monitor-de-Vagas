@@ -1,4 +1,4 @@
-import type { Mapa, RespostaApi, ResumoMapa, Vaga } from "./tipos";
+import type { Mapa, OcupacaoMapa, RespostaApi, ResumoMapa, Vaga } from "./tipos";
 
 async function requisitar<T>(url: string, init?: RequestInit): Promise<T> {
   const resposta = await fetch(url, init);
@@ -25,3 +25,13 @@ export const salvarVagas = (id: string, vagas: Vaga[]) =>
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ Vagas: vagas })
   });
+
+export const analisarMapa = (id: string, imagem: File) => {
+  const dados = new FormData();
+  dados.append("Imagem", imagem);
+
+  return requisitar<OcupacaoMapa>(`/mapas/${encodeURIComponent(id)}/analisar`, {
+    method: "POST",
+    body: dados
+  });
+};
