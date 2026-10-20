@@ -24,18 +24,26 @@ const VISUAIS: Record<Tipo, { normal: Visual; destaque: Visual }> = {
 type Props = {
   titulo: string;
   tipo?: Tipo;
+  // Mantém a variante de hover fixa, para opções escolhidas (ex.: "Sim"/"Não")
+  selecionado?: boolean;
   onPress?: () => void;
 };
 
-export function Botao({ titulo, tipo = 'primario', onPress }: Props) {
+export function Botao({ titulo, tipo = 'primario', selecionado, onPress }: Props) {
   const { progresso, eventos } = useDestaque();
   const { normal, destaque } = VISUAIS[tipo];
 
   return (
-    <Pressable onPress={onPress} {...eventos} accessibilityRole="button">
+    <Pressable
+      onPress={onPress}
+      {...eventos}
+      // Como opção, é lido como "radio" marcado/desmarcado (na web o "selected" de um botão é ignorado)
+      accessibilityRole={selecionado === undefined ? 'button' : 'radio'}
+      aria-checked={selecionado}
+    >
       <Camada visual={normal} titulo={titulo} />
       {/* A variante de hover aparece por cima com fade */}
-      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: progresso }]}>
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: selecionado ? 1 : progresso }]}>
         <Camada visual={destaque} titulo={titulo} />
       </Animated.View>
     </Pressable>

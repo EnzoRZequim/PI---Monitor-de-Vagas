@@ -40,7 +40,7 @@ export function AcoesParceiro({ style }: { style?: StyleProp<ViewStyle> }) {
   return (
     <View style={style}>
       <Botao tipo="secundario" titulo="Área do parceiro" onPress={() => router.push('/login')} />
-      <Botao tipo="secundario" titulo="Tornar-se um parceiro" />
+      <Botao tipo="secundario" titulo="Tornar-se um parceiro" onPress={() => router.push('/tornar-se-parceiro')} />
     </View>
   );
 }
