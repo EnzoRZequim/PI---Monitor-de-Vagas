@@ -7,7 +7,9 @@ import { z } from "zod";
 import { badRequest, conflict, created, internalError, notFound, ok, sendResponse, updated } from "../common/ResponseHelper";
 import { IMAGES_DIR } from "../config/paths";
 import { buscarMapa, criarMapa, listarMapas, salvarMapa } from "../services/MapaStorage";
+import { analisarOcupacao } from "../services/AnaliseOcupacao";
 import type { Mapa } from "../types/Mapa";
+import type { OcupacaoMapa } from "../types/Ocupacao";
 
 const router = Router();
 const formatoID = /^[a-zA-Z0-9-]+$/;
@@ -167,16 +169,7 @@ router.post("/:ID/analisar", upload.single("Imagem"), async (req, res) => {
       return sendResponse(res, badRequest("A proporção da imagem não corresponde à do mapa. Use uma imagem da mesma câmera/ângulo."));
     }
 
-    const ocupacao = {
-      MapaID: mapa.ID,
-      Data: new Date().toISOString(),
-      Vagas: mapa.Vagas.map((vaga) => ({
-        ID: vaga.ID,
-        Nome: vaga.Nome,
-        Ocupada: false,
-        Sobreposicao: 0
-      }))
-    };
+    const ocupacao: OcupacaoMapa = await analisarOcupacao(req.file.buffer, mapa);
 
     return sendResponse(res, ok("Análise concluída.", ocupacao));
   } catch (erro) {

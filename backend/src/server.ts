@@ -1,13 +1,16 @@
+import cors = require("cors");
 import express = require("express");
 
 import { ensureDirectories } from "./config/ensureDirectories";
 import { IMAGES_DIR } from "./config/paths";
 import mapasRouter from "./routes/mapas";
+import { carregarClassificador } from "./services/ClassificadorVagas";
 
 const app = express();
 
 const porta = 3000;
 
+app.use(cors());
 app.use(express.json());
 
 app.use("/mapas", mapasRouter);
@@ -20,6 +23,8 @@ app.get("/saude", (_req, res) => {
 
 async function iniciarServidor() {
   await ensureDirectories();
+  await carregarClassificador();
+  console.log("Classificador de vagas carregado.");
 
   app.listen(porta, () => {
     console.log(`API disponível em http://localhost:${porta}`);
