@@ -1,16 +1,37 @@
 # Estrutura do Projeto
 
-Este documento descreve a organização das pastas e arquivos do projeto
-**PI — Monitor de Vagas**.
+Este documento descreve a organização das pastas e arquivos do projeto **PI — Monitor de Vagas**, detalhando responsabilidades, rotas da API e próximos passos.
 
 ## Visão geral
 
 ```text
 PI---Monitor-de-Vagas/
 ├─ backend/
+│  └─ src/
+│     ├─ common/
+│     ├─ config/
+│     ├─ routes/
+│     ├─ services/
+│     ├─ types/
+│     └─ server.ts
 ├─ data/
+│  ├─ images/
+│  ├─ maps/
+│  ├─ models/
+│  ├─ occupancy/
+│  └─ temp/
 ├─ docs/
 ├─ frontend/
+│  ├─ package.json
+│  ├─ vite.config.ts
+│  ├─ index.html
+│  ├─ public/
+│  └─ src/
+│     ├─ App.tsx
+│     ├─ EditorVagas.tsx
+│     ├─ api.ts
+│     ├─ main.tsx
+│     └─ tipos.ts
 ├─ scripts/
 ├─ node_modules/
 ├─ dist/
@@ -40,83 +61,61 @@ backend/
 
 ### `backend/src/common/`
 
-Contém recursos compartilhados por mais de uma parte do backend.
-
-Atualmente, possui o arquivo `ResponseHelper.ts`, responsável por padronizar as respostas enviadas pela API, como respostas de sucesso, erro de validação, item não encontrado e conflito de dados.
+Recursos compartilhados por mais de uma parte do backend. Possui `ResponseHelper.ts`, que padroniza respostas da API (sucesso, erro de validação, item não encontrado, conflito de dados).
 
 ### `backend/src/config/`
 
-Contém configurações centralizadas da aplicação.
+Configurações centralizadas.
 
-- `paths.ts` define os caminhos das pastas de dados (`data/images`, `data/maps`, `data/occupancy`, `data/temp`), evitando caminhos repetidos em vários arquivos.
-- `ensureDirectories.ts` cria essas pastas automaticamente quando o servidor é iniciado.
+- `paths.ts`: caminhos das pastas de dados (`data/images`, `data/maps`, `data/occupancy`, `data/temp`).
+- `ensureDirectories.ts`: cria essas pastas automaticamente ao iniciar o servidor.
 
 ### `backend/src/routes/`
 
-Contém as rotas da API.
+Rotas da API. O arquivo `mapas.ts` registra:
 
-O arquivo `mapas.ts` registra as rotas relacionadas aos mapas de estacionamento, incluindo:
-
-- Cadastro de mapa e imagem (`POST /mapas`);
-- Listagem de mapas cadastrados (`GET /mapas`);
-- Busca de um mapa pelo ID (`GET /mapas/:ID`);
-- Salvamento e atualização das vagas mapeadas (`PUT /mapas/:ID/vagas`).
+- `POST /mapas` — cadastra imagem e cria mapa vazio;
+- `GET /mapas` — lista mapas cadastrados;
+- `GET /mapas/:ID` — busca mapa pelo ID;
+- `PUT /mapas/:ID/vagas` — salva/atualiza vagas mapeadas;
+- `POST /mapas/:ID/analisar` — analisa imagem e retorna estado das vagas.
 
 Cada vaga é validada com exatamente quatro pontos, com `X` e `Y` entre 0 e 1.
 
 ### `backend/src/services/`
 
-Contém regras de acesso e persistência dos dados.
-
-O arquivo `MapaStorage.ts` é responsável por ler e salvar os arquivos JSON dos mapas em `data/maps`, além de listar resumos de mapas (`listarMapas`) para uso nas telas de seleção.
+Regras de acesso e persistência. `MapaStorage.ts` lê e salva arquivos JSON dos mapas em `data/maps`, além de listar resumos (`listarMapas`).
 
 ### `backend/src/types/`
 
-Contém os tipos e interfaces TypeScript utilizados pelo backend.
-
-O arquivo `Mapa.ts` descreve a estrutura de um mapa, das vagas e de seus pontos normalizados.
+Tipos e interfaces TypeScript. `Mapa.ts` descreve estrutura de mapa, vagas e pontos normalizados.
 
 ### `backend/src/server.ts`
 
-É o ponto de entrada do backend. Ele cria e configura o servidor Express, habilita JSON e CORS, serve imagens via `/imagens` e registra as rotas em `/mapas`.
+Ponto de entrada. Configura Express, JSON, CORS, serve imagens via `/imagens` e registra rotas em `/mapas`.
 
 ### `data/`
 
-Contém arquivos usados ou gerados durante a execução da aplicação. Essa pasta não é enviada ao Git, pois pode conter imagens grandes, mapas locais, resultados de execução e arquivos temporários.
+Arquivos usados ou gerados durante a execução. **Não é enviada ao Git** (imagens, mapas locais, resultados, temporários).
 
 ```text
 data/
-├─ images/
-├─ maps/
-├─ occupancy/
-└─ temp/
+├─ images/    Imagens de referência cadastradas
+├─ maps/      Arquivos JSON com mapas e vagas
+├─ models/    Modelo de classificação ONNX
+├─ occupancy/ Resultados de ocupação (futuro)
+└─ temp/      Arquivos temporários de processamento
 ```
 
-### `data/images/`
-
-Armazena imagens de estacionamentos enviadas no cadastro de um mapa. São servidas pela API em `/imagens/:arquivo`.
-
-### `data/maps/`
-
-Armazena arquivos JSON com os mapas cadastrados, incluindo dados da imagem, dimensões e polígonos das vagas.
-
-### `data/occupancy/`
-
-Será usada futuramente para guardar os resultados da análise de ocupação de cada vaga, como `livre`, `ocupada`, nível de confiança e data/hora da análise.
-
-### `data/temp/`
-
-Será usada para arquivos temporários, como recortes de imagens de vagas ou arquivos intermediários criados durante a etapa de visão computacional.
+Ao iniciar o servidor, a aplicação cria essa estrutura automaticamente na raiz do projeto.
 
 ### `docs/`
 
-Contém a documentação do projeto.
-
-O arquivo `estrutura_projeto.md` explica a finalidade de cada pasta e arquivo principal. Outros documentos podem registrar arquitetura, decisões técnicas, formato dos mapas e referências utilizadas.
+Documentação do projeto. Este arquivo explica pastas e responsabilidades.
 
 ### `frontend/`
 
-Contém a interface web em React + Vite usada para mapear vagas.
+Interface web em React + Vite.
 
 ```text
 frontend/
@@ -132,69 +131,111 @@ frontend/
    └─ tipos.ts
 ```
 
-Principais arquivos:
+- `App.tsx`: tela principal, seleção/criação de mapas e edição de vagas.
+- `EditorVagas.tsx`: renderiza imagem e vagas, permite marcar e mover pontos.
+- `api.ts`: chamadas à API do backend.
+- `tipos.ts`: tipos TypeScript do frontend.
 
-- `package.json`: dependências e scripts do frontend (`dev`, `build`, `lint`, `preview`).
-- `vite.config.ts`: configuração do Vite, incluindo o proxy de `/mapas` e `/imagens` para o backend em `http://localhost:3000`.
-- `src/App.tsx`: tela principal, com seleção/criação de mapas e edição de vagas.
-- `src/EditorVagas.tsx`: renderiza a imagem e as vagas, permitindo marcar e mover pontos.
-- `src/api.ts`: chamadas à API do backend.
-- `src/tipos.ts`: tipos TypeScript do frontend.
-
-Durante `npm run dev`, o frontend sobe em `http://localhost:5173`. Sua pasta `node_modules/` e `dist/` são ignoradas pelo Git.
+Durante `npm run dev`, sobe em `http://localhost:5173`. `node_modules/` e `dist/` são ignoradas pelo Git.
 
 ### `scripts/`
 
-Contém scripts auxiliares de desenvolvimento.
-
-Atualmente, possui `dev-all.js`, que inicia o backend e o frontend juntos com o comando `npm run dev:all` na raiz do projeto.
+Scripts auxiliares. Possui `dev-all.js` (inicia backend e frontend juntos via `npm run dev:all`).
 
 ### `node_modules/`
 
-Contém as bibliotecas instaladas pelo NPM, como Express, Sharp, Zod, TypeScript, React e Vite.
-
-Essa pasta é criada automaticamente pelo comando `npm install` e não deve ser enviada ao Git.
+Bibliotecas instaladas pelo NPM. Criada automaticamente pelo `npm install`; não vai ao Git.
 
 ### `dist/`
 
-Contém a versão compilada do backend (e, se builds forem executados na pasta `frontend/`, da interface compilada também).
-
-Os arquivos TypeScript de `backend/src/` são convertidos em JavaScript nessa pasta quando o comando `npm run build` é executado na raiz.
-
-Essa pasta não deve ser editada manualmente nem enviada ao Git, porque pode ser recriada a qualquer momento a partir do código-fonte.
+Versão compilada do backend (e frontend, se buildado). Gerada por `npm run build`; não deve ser editada manualmente nem enviada ao Git.
 
 ## Arquivos da raiz
 
 ### `package.json`
 
-Descreve o projeto Node.js, suas dependências e os comandos disponíveis.
+Dependências e scripts do projeto Node.js.
 
-Comandos principais:
-
-```bash
-npm run dev
-npm run build
-npm start
-```
-
-- `npm run dev`: executa o backend em modo de desenvolvimento, usando TypeScript diretamente e reiniciando ao detectar alterações.
-- `npm run build`: compila o TypeScript de `backend/src/` para JavaScript dentro de `dist/`.
-- `npm start`: executa a versão JavaScript compilada em `dist/`.
+| Comando | Finalidade |
+|---------|------------|
+| `npm install` | Instala dependências |
+| `npm run dev` | Backend em desenvolvimento |
+| `npm run dev:all` | Backend e frontend juntos |
+| `npm run dev:frontend` | Somente frontend |
+| `npm run build` | Compila TypeScript para `dist/` |
+| `npm start` | Executa versão compilada em `dist/` |
 
 ### `package-lock.json`
 
-Registra as versões exatas das dependências instaladas. Deve ser enviado ao Git para que outras pessoas instalem versões compatíveis das mesmas bibliotecas.
+Versões exatas das dependências. Deve ser enviado ao Git.
 
 ### `tsconfig.json`
 
-Define como o TypeScript deve verificar e compilar os arquivos do backend.
-
-Ele informa que os arquivos-fonte estão em `backend/src/` e que a saída compilada deve ser criada em `dist/`.
+Configuração do TypeScript: fonte em `backend/src/`, saída em `dist/`.
 
 ### `.gitignore`
 
-Define quais arquivos e pastas não devem ser enviados ao Git, incluindo `node_modules/`, `dist/`, `data/`, dataset local, arquivos de ambiente e logs.
+Arquivos/pastas ignoradas pelo Git: `node_modules/`, `dist/`, `data/`, dataset local, `.env`, `.env.*` (exceto `.env.example`), `*.log`, `graphify-out/`, `.graphify-out/`, `treino/dados/`, `*.pt`, `*.onnx`.
 
-### `README.md`
+## Uso da interface
 
-Apresenta o projeto, seu objetivo, instruções básicas de instalação e execução, URLs de uso e um link para a documentação em `docs/`.
+### Editor de mapas
+
+1. Inicie o backend com `npm run dev` na raiz.
+2. Inicie o frontend com `npm run dev` em `frontend/`.
+3. Abra `http://localhost:5173` na aba **Editor de mapas**.
+4. Selecione ou crie um mapa informando ID, nome e imagem.
+5. Clique em **Nova vaga** e marque exatamente os quatro cantos da vaga.
+6. Informe o nome da vaga e clique em **Salvar vagas**.
+7. Ajuste, renomeie ou exclua vagas quando necessário e salve novamente.
+
+Cada vaga possui `ID`, `Nome` e quatro pontos normalizados entre 0 e 1.
+
+### Monitor de vagas
+
+1. Vá para a aba **Monitor de vagas**.
+2. Selecione um mapa cadastrado.
+3. Selecione uma imagem da mesma câmera/ângulo do mapa.
+4. Os polígonos das vagas aparecem sobrepostos à imagem.
+5. Clique em **Analisar** para classificar as vagas.
+
+A imagem enviada precisa ter proporção compatível com a imagem de referência do mapa, pois as coordenadas são normalizadas.
+
+## API disponível
+
+| Método | Rota | Função |
+|--------|------|--------|
+| `GET` | `/saude` | Verifica se a API está respondendo |
+| `GET` | `/mapas` | Lista mapas cadastrados |
+| `POST` | `/mapas` | Cadastra imagem e cria mapa vazio |
+| `GET` | `/mapas/:ID` | Retorna um mapa cadastrado |
+| `PUT` | `/mapas/:ID/vagas` | Atualiza lista completa de vagas do mapa |
+| `POST` | `/mapas/:ID/analisar` | Analisa imagem e retorna estado das vagas |
+| `GET` | `/imagens/:arquivo` | Exibe imagem de referência cadastrada |
+
+### Detalhes das requisições
+
+**`POST /mapas`**: envie `multipart/form-data` com `ID`, `Nome` e `Imagem`.
+
+**`PUT /mapas/:ID/vagas`**: envie JSON com a lista completa de vagas. Cada vaga deve ter `ID`, `Nome` e exatamente quatro `Pontos` com `X` e `Y` entre 0 e 1.
+
+**`POST /mapas/:ID/analisar`**: envie `multipart/form-data` com o campo `Imagem`. A resposta contém `MapaID`, `Data` e lista de vagas com `ID`, `Nome`, `Ocupada` e `Sobreposicao`.
+
+> ⚠️ Atualmente a rota de análise retorna todas as vagas como **livres**, pois o classificador de IA ainda não foi integrado.
+
+## Dataset de exemplo
+
+O dataset [PKLot no Roboflow](https://public.roboflow.com/object-detection/pklot) será usado para treinar e avaliar o classificador de vagas, pois já traz cada vaga rotulada como livre ou ocupada.
+
+O dataset deve permanecer separado da pasta `data/`. Para o mapeamento, basta uma imagem de referência por câmera/cenário; não é necessário cadastrar todas as imagens do dataset.
+
+Antes de usar o dataset em relatórios ou apresentações, consulte os termos de licença e atribuição na [página do PKLot no Roboflow](https://public.roboflow.com/object-detection/pklot).
+
+## Próximas etapas
+
+1. Treinar um classificador de vagas (livre/ocupada) com o dataset PKLot e exportar para ONNX.
+2. Integrar o classificador à rota `POST /mapas/:ID/analisar`.
+3. Aplicar histerese para evitar alternância de estado entre análises consecutivas.
+4. Armazenar resultados de ocupação em `data/occupancy/`.
+5. Avaliar acurácia, precisão e recall com o PKLot.
+6. Integrar atualização em tempo real (foto a cada X segundos de vídeo/câmera).
