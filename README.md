@@ -4,41 +4,66 @@ Sistema de estacionamento inteligente que identifica vagas livres e ocupadas a p
 
 ## O que o projeto faz
 
-- **Editor de mapas:** cadastre uma imagem do estacionamento e marque as vagas com polígonos de 4 pontos (coordenadas normalizadas de 0 a 1).
-- **Monitor de vagas:** carregue uma imagem da mesma câmera, visualize os polígonos sobrepostos e classifique cada vaga como livre ou ocupada.
+- **Editor de mapas:** cadastre uma foto do estacionamento e marque as vagas desenhando polígonos ao redor de cada uma.
+- **Monitor de vagas:** carregue uma foto da mesma câmera, visualize as vagas marcadas sobre a imagem e veja se cada vaga está livre ou ocupada.
 
-> ⚠️ A rota de análise ainda retorna todas as vagas como **livres**, pois o classificador de IA (modelo ONNX) ainda não foi integrado. Consulte os próximos passos em [`docs/estrutura_projeto.md`](docs/estrutura_projeto.md).
+> ⚠️ **Atenção:** a classificação por IA (saber se a vaga está livre ou ocupada automaticamente) ainda não foi integrada. Por enquanto, o sistema mostra todas as vagas como **livres**, independentemente da imagem. Isso será ajustado em próximas etapas.
 
-## Tecnologias
+---
 
-**Backend:** Node.js, TypeScript, Express, Multer, Sharp, Zod, ONNX Runtime  
-**Frontend:** React, Vite, TypeScript, SVG
+## 📋 Antes de começar (pré-requisitos)
 
-## Pré-requisitos
+Você vai precisar instalar estes programas no seu computador:
 
-- [Node.js](https://nodejs.org/) e NPM instalados
+| Programa | Para que serve | Onde baixar |
+|----------|---------------|-------------|
+| **Node.js** (com NPM) | Rodar o backend e o frontend | https://nodejs.org/ (escolha a versão LTS) |
+| **Git LFS** | Baixar o modelo de IA (arquivo grande) | https://git-lfs.com/ |
 
-Python 3 + `ultralytics` só são necessários se você for **treinar/exportar o modelo de IA**.
+> **Git LFS é obrigatório.** Sem ele, o modelo de IA não será baixado corretamente ao clonar o projeto.
 
-## Como rodar
+---
 
-### Opção 1: Backend e Frontend separados (recomendado)
+## 🚀 Como rodar o projeto (passo a passo)
 
-Abra **dois terminais**:
+### 1. Baixar o projeto
 
-**Terminal 1 — Backend (na raiz do projeto):**
+Abra um terminal (PowerShell no Windows) e rode:
+
+```powershell
+git clone https://github.com/EnzoRZequim/PI---Monitor-de-Vagas.git
+cd PI---Monitor-de-Vagas
+```
+
+### 2. Baixar o modelo de IA (Git LFS)
+
+Como o modelo de IA é um arquivo grande, ele não vem direto no clone. Após clonar, rode:
+
+```powershell
+git lfs pull
+```
+
+Isso vai baixar o arquivo `yolov8n.pt` para a pasta raiz do projeto.
+
+### 3. Rodar o backend
+
+Abra um terminal na **raiz do projeto** (onde está o arquivo `package.json`) e rode:
 
 ```powershell
 npm install
 npm run dev
 ```
 
-O servidor ficará disponível em:
+O backend ficará disponível em:
 
 - API: `http://localhost:3000`
 - Status: `http://localhost:3000/saude`
 
-**Terminal 2 — Frontend (na pasta `frontend/`):**
+Deixe esse terminal aberto.
+
+### 4. Rodar o frontend
+
+Abra **outro terminal**, entre na pasta `frontend/` e rode:
 
 ```powershell
 cd frontend
@@ -46,40 +71,40 @@ npm install
 npm run dev
 ```
 
-A interface ficará disponível em: `http://localhost:5173`
+O frontend ficará disponível em: `http://localhost:5173`
 
-> O Vite faz proxy de `/mapas` e `/imagens` para o backend em `http://localhost:3000`, então o backend precisa estar rodando primeiro.
+> O frontend precisa do backend rodando para funcionar. Então sempre inicie o backend primeiro (passo 3) e depois o frontend (passo 4).
 
-### Opção 2: Backend e Frontend juntos (`dev:all`)
+### 5. Usar o sistema
 
-```powershell
-npm run dev:all
-```
+1. Abra o navegador em `http://localhost:5173`
+2. Na aba **Editor de mapas**, selecione o mapa `teste2` (já vem com 32 vagas marcadas)
+3. Na aba **Monitor de vagas**, selecione o mapa `teste2` e a imagem `estacionamento 2`
+4. Clique em **Analisar** para ver as vagas (por enquanto, todas aparecerão como livres)
 
-Esse comando roda o backend e o frontend ao mesmo tempo, mas **não funciona muito bem ainda** (pode haver problemas de porta ou sincronização). Recomendamos usar a Opção 1.
+---
 
-## Arquivos de teste incluídos
+## ⚠️ Sobre o modelo de IA
 
-O repositório já vem com um mapa e uma imagem prontos para testar:
+O projeto usa Git LFS para gerenciar arquivos grandes (modelos `.pt` e `.onnx`).
 
-- **Mapa:** `teste2` (32 vagas já mapeadas)
-- **Imagem:** `estacionamento 2` (foto de referência do estacionamento)
+- Se você só quer **testar o mapa e a interface**, não precisa do modelo de IA. O sistema funciona sem ele (apenas mostra todas as vagas como livres).
+- Se você for **integrar ou treinar o classificador de IA**, será necessário o Python 3 com o pacote `ultralytics` instalado.
 
-Após iniciar o backend e o frontend, abra `http://localhost:5173`, selecione o mapa `teste2` no Editor de mapas ou Monitor de vagas e tudo já estará carregado.
+---
 
-## Modelo de IA (Git LFS)
+## 🗺️ Arquivos de teste já incluídos
 
-O modelo de classificação `.onnx` e `.pt` são arquivos grandes e não são versionados diretamente no Git. Eles são gerenciados via **Git LFS**.
+O repositório já vem com arquivos prontos para você testar sem precisar cadastrar nada:
 
-Após clonar o repositório, baixe os modelos com:
+- **Mapa:** `teste2` — 32 vagas já mapeadas
+- **Imagem:** `estacionamento 2` — foto de referência do estacionamento
 
-```powershell
-git lfs pull
-```
+Basta selecionar esses arquivos na interface para começar a usar.
 
-O modelo deve ficar em `data/models/classificador_vagas.onnx`. Enquanto ele não estiver disponível, a rota de análise retorna todas as vagas como livres.
+---
 
-## Documentação detalhada
+## 📚 Documentação detalhada
 
 Para arquitetura, estrutura de pastas, rotas da API detalhada, uso da interface e próximos passos, consulte:
 
