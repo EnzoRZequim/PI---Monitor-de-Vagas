@@ -17,13 +17,16 @@ Sistema de estacionamento inteligente que identifica vagas livres e ocupadas a p
 ## Pré-requisitos
 
 - [Node.js](https://nodejs.org/) e NPM instalados
-- Duas terminais abertas: uma na raiz do projeto (backend) e outra em `frontend/` (interface)
 
 Python 3 + `ultralytics` só são necessários se você for **treinar/exportar o modelo de IA**.
 
 ## Como rodar
 
-### 1. Backend (raiz do projeto)
+### Opção 1: Backend e Frontend separados (recomendado)
+
+Abra **dois terminais**:
+
+**Terminal 1 — Backend (na raiz do projeto):**
 
 ```powershell
 npm install
@@ -35,7 +38,7 @@ O servidor ficará disponível em:
 - API: `http://localhost:3000`
 - Status: `http://localhost:3000/saude`
 
-### 2. Frontend (em outro terminal)
+**Terminal 2 — Frontend (na pasta `frontend/`):**
 
 ```powershell
 cd frontend
@@ -45,11 +48,36 @@ npm run dev
 
 A interface ficará disponível em: `http://localhost:5173`
 
-> O Vite faz proxy de `/mapas` e `/imagens` para o backend, então o backend precisa estar rodando.
+> O Vite faz proxy de `/mapas` e `/imagens` para o backend em `http://localhost:3000`, então o backend precisa estar rodando primeiro.
 
-### 3. Modelo de IA (opcional para esta etapa)
+### Opção 2: Backend e Frontend juntos (`dev:all`)
 
-O modelo `.onnx` deve ficar em `data/models/classificador_vagas.onnx`. Essa pasta não é versionada no Git, então, se clonar o projeto em outra máquina, coloque o modelo manualmente nessa pasta antes de usar a análise por IA.
+```powershell
+npm run dev:all
+```
+
+Esse comando roda o backend e o frontend ao mesmo tempo, mas **não funciona muito bem ainda** (pode haver problemas de porta ou sincronização). Recomendamos usar a Opção 1.
+
+## Arquivos de teste incluídos
+
+O repositório já vem com um mapa e uma imagem prontos para testar:
+
+- **Mapa:** `teste2` (32 vagas já mapeadas)
+- **Imagem:** `estacionamento 2` (foto de referência do estacionamento)
+
+Após iniciar o backend e o frontend, abra `http://localhost:5173`, selecione o mapa `teste2` no Editor de mapas ou Monitor de vagas e tudo já estará carregado.
+
+## Modelo de IA (Git LFS)
+
+O modelo de classificação `.onnx` e `.pt` são arquivos grandes e não são versionados diretamente no Git. Eles são gerenciados via **Git LFS**.
+
+Após clonar o repositório, baixe os modelos com:
+
+```powershell
+git lfs pull
+```
+
+O modelo deve ficar em `data/models/classificador_vagas.onnx`. Enquanto ele não estiver disponível, a rota de análise retorna todas as vagas como livres.
 
 ## Documentação detalhada
 
