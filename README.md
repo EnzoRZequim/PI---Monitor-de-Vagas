@@ -13,14 +13,14 @@ Sistema de estacionamento inteligente que identifica vagas livres e ocupadas a p
 
 ## 📋 Antes de começar (pré-requisitos)
 
-Você vai precisar instalar estes programas no seu computador:
+Instale estes programas **antes** de clonar o projeto:
 
 | Programa | Para que serve | Onde baixar |
 |----------|---------------|-------------|
 | **Node.js** (com NPM) | Rodar o backend e o frontend | https://nodejs.org/ (escolha a versão LTS) |
-| **Git LFS** | Baixar o modelo de IA (arquivo grande) | https://git-lfs.com/ |
+| **Git LFS** | Baixar os modelos de IA (arquivos grandes) | https://git-lfs.com/ |
 
-> **Git LFS é obrigatório.** Sem ele, o modelo de IA não será baixado corretamente ao clonar o projeto.
+> ⚠️ **Instale o Git LFS antes de clonar.** Se clonar sem ele, os arquivos grandes não baixarão corretamente. Após instalar, feche e reabra o terminal para que o comando `git lfs` funcione.
 
 ---
 
@@ -28,22 +28,22 @@ Você vai precisar instalar estes programas no seu computador:
 
 ### 1. Baixar o projeto
 
-Abra um terminal (PowerShell no Windows) e rode:
+Abra um terminal (PowerShell no Windows, ou o terminal integrado do VS Code com `Ctrl + \``) e rode:
 
 ```powershell
 git clone https://github.com/EnzoRZequim/PI---Monitor-de-Vagas.git
 cd PI---Monitor-de-Vagas
 ```
 
-### 2. Baixar o modelo de IA (Git LFS)
+### 2. Baixar os modelos de IA (Git LFS)
 
-Como o modelo de IA é um arquivo grande, ele não vem direto no clone. Após clonar, rode:
+Como os modelos de IA são arquivos grandes, eles não vêm direto no clone. Após clonar, rode:
 
 ```powershell
 git lfs pull
 ```
 
-Isso vai baixar o arquivo `yolov8n.pt` para a pasta raiz do projeto.
+Isso vai baixar os arquivos de modelo (`.pt` e `.onnx`) para a pasta raiz e para `data/models/`.
 
 ### 3. Rodar o backend
 
