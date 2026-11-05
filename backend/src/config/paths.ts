@@ -7,3 +7,4 @@ export const MAPS_DIR = path.join(DATA_DIR, "maps");
 export const MODELS_DIR = path.join(DATA_DIR, "models");
 export const OCCUPANCY_DIR = path.join(DATA_DIR, "occupancy");
 export const TEMP_DIR = path.join(DATA_DIR, "temp");
+export const VIDEOS_DIR = path.join(DATA_DIR, "videos");

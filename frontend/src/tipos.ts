@@ -44,3 +44,27 @@ export type OcupacaoMapa = {
   Data: string;
   Vagas: EstadoVaga[];
 };
+
+export type MonitorResult = {
+  sessionId: string;
+  frame: number;
+  totalFrames: number;
+  timestamp: string;
+  ocupacao: OcupacaoMapa;
+  motionDetected: boolean;
+  motionInfo: { changedPixels: number; totalPixels: number; ratio: number } | null;
+};
+
+export type SessionStatus = 'IDLE' | 'OBSERVING' | 'ANALYZING' | 'WAITING' | 'STOPPED' | 'COMPLETED' | 'ERROR';
+
+export type MonitorStatusInfo = {
+  tipo: 'status';
+  status: SessionStatus;
+  info?: any;
+} | {
+  tipo: 'resultado';
+  dados: MonitorResult;
+} | {
+  tipo: 'erro';
+  mensagem: string;
+};

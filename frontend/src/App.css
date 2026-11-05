@@ -113,3 +113,81 @@ button {
   fill: #19875455;
   stroke: #198754;
 }
+
+/* Monitor de vídeo */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.form-group label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.botoes-toggle {
+  gap: 8px;
+}
+
+.toggle {
+  padding: 6px 12px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.toggle.ativo {
+  background: #0066cc;
+  color: #fff;
+  border-color: #0066cc;
+}
+
+.botao-parar {
+  background: #dc3545;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.botao-parar:hover {
+  background: #b02a37;
+}
+
+.tabela-vagas,
+.tabela-resumo {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  margin-top: 8px;
+}
+
+.tabela-vagas th,
+.tabela-vagas td,
+.tabela-resumo th,
+.tabela-resumo td {
+  border: 1px solid #d1d5db;
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.tabela-vagas th,
+.tabela-resumo th {
+  background: #f3f4f6;
+}
+
+.legenda {
+  margin-top: 12px;
+  font-size: 0.9rem;
+}
+
+.erro {
+  color: #dc3545;
+  font-weight: 600;
+  margin-top: 8px;
+}

@@ -35,3 +35,17 @@ export const analisarMapa = (id: string, imagem: File) => {
     body: dados
   });
 };
+
+export const iniciarMonitoramento = (dados: FormData) => {
+  return requisitar<{ sessionId: string; status: string; mensagem: string }>(
+    "/monitorar",
+    { method: "POST", body: dados }
+  );
+};
+
+export const pararMonitoramento = (sessionId: string) => {
+  return requisitar<{ sessionId: string; status: string }>(
+    `/monitorar/${encodeURIComponent(sessionId)}/parar`,
+    { method: "POST" }
+  );
+};

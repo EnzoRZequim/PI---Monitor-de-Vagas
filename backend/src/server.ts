@@ -1,10 +1,12 @@
 import cors = require("cors");
 import express = require("express");
+import { createServer } from "node:http";
 
 import { ensureDirectories } from "./config/ensureDirectories";
 import { IMAGES_DIR } from "./config/paths";
 import mapasRouter from "./routes/mapas";
 import { carregarClassificador } from "./services/ClassificadorVagas";
+import { monitorRouter, anexarWebSocket } from "./routes/monitor";
 
 const app = express();
 
@@ -14,6 +16,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/mapas", mapasRouter);
+app.use("/monitorar", monitorRouter);
 
 app.use("/imagens", express.static(IMAGES_DIR));
 
@@ -26,7 +29,14 @@ async function iniciarServidor() {
   await carregarClassificador();
   console.log("Classificador de vagas carregado.");
 
-  app.listen(porta, () => {
+  // Cria servidor HTTP para permitir anexar WebSocket
+  const httpServer = createServer(app);
+
+  // Anexa WebSocket para monitoramento de vídeo
+  anexarWebSocket(httpServer);
+  console.log("WebSocket de monitoramento disponível em ws://localhost:" + porta + "/ws/monitor");
+
+  httpServer.listen(porta, () => {
     console.log(`API disponível em http://localhost:${porta}`);
     console.log(`Status da API: http://localhost:${porta}/saude`);
   });

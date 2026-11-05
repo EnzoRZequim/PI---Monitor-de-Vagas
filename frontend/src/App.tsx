@@ -3,11 +3,12 @@ import type { FormEvent } from "react";
 import { buscarMapa, criarMapa, listarMapas, salvarVagas } from "./api";
 import { EditorVagas } from "./EditorVagas";
 import { MonitorVagas } from "./MonitorVagas";
+import MonitorVideo from "./MonitorVideo";
 import type { Mapa, Ponto, ResumoMapa, Vaga } from "./tipos";
 import "./App.css";
 
 const ID_VALIDO = /^[a-zA-Z0-9-]+$/;
-type Aba = "editor" | "monitor";
+type Aba = "editor" | "monitor" | "monitor-video";
 
 function textoDoErro(erro: unknown): string {
   return erro instanceof Error ? erro.message : "Ocorreu um erro inesperado.";
@@ -207,9 +208,17 @@ export default function App() {
         >
           Monitor de vagas
         </button>
+        <button
+          className={aba === "monitor-video" ? "aba ativa" : "aba"}
+          onClick={() => setAba("monitor-video")}
+        >
+          Monitor de vídeo
+        </button>
       </nav>
 
-      {aba === "monitor" ? (
+      {aba === "monitor-video" ? (
+        <MonitorVideo />
+      ) : aba === "monitor" ? (
         <MonitorVagas mapas={mapas} />
       ) : (
         <>
