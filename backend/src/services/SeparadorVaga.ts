@@ -24,11 +24,11 @@ function pontosParaRetangulo(
 }
 
 /**
- * Analisa uma imagem contra um mapa e retorna o estado (ocupada/livre)
- * de cada vaga, recortando cada região da vaga e classificando com o
- * modelo treinado (MobileNet V3 Small ONNX).
+ * Separa cada vaga de uma imagem (recorta a região da vaga) e classifica
+ * com o modelo treinado (MobileNet V3 Small ONNX), retornando o estado
+ * (ocupada/livre) de cada vaga.
  */
-export async function analisarOcupacao(
+export async function separarVagas(
   imagem: Buffer,
   mapa: Mapa
 ): Promise<OcupacaoMapa> {

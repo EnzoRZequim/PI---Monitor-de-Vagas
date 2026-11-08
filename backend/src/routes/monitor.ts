@@ -61,18 +61,25 @@ function enviarParaClientes(sessionId: string, payload: string): void {
  *  - vídeo (arquivo)
  */
 router.post('/', upload.single('video'), async (req, res) => {
+  console.log('[MONITOR] POST /monitorar recebido');
+  console.log('[MONITOR] corpo:', req.body);
+  console.log('[MONITOR] arquivo:', req.file ? { nome: req.file.originalname, caminho: req.file.path, tamanho: req.file.size } : 'nenhum');
+
   const { mapaId, useMask, useMotionOptimization, intervalSeconds } = req.body;
   const videoFile = req.file;
 
   if (!mapaId || typeof mapaId !== 'string') {
+    console.log('[MONITOR] erro: mapaId ausente ou inválido');
     return res.status(400).json({ erro: 'mapaId é obrigatório.' });
   }
   if (!videoFile) {
+    console.log('[MONITOR] erro: arquivo de vídeo ausente');
     return res.status(400).json({ erro: 'Envie um arquivo de vídeo no campo vídeo.' });
   }
 
   const mapa = await buscarMapa(mapaId);
   if (!mapa) {
+    console.log('[MONITOR] erro: mapa não encontrado:', mapaId);
     return res.status(404).json({ erro: 'Mapa não encontrado.' });
   }
 
@@ -101,16 +108,25 @@ router.post('/', upload.single('video'), async (req, res) => {
   wsClients.set(sessionId, new Set());
 
   try {
+    console.log('[MONITOR] iniciando sessão:', sessionId);
     await sessao.start();
+    console.log('[MONITOR] sessão iniciada com sucesso:', sessionId);
     return res.json({
-      sessionId,
-      status: 'iniciado',
-      mensagem: 'Monitoramento iniciado. Conecte via WebSocket para receber resultados em tempo real.',
+      success: true,
+      data: {
+        sessionId,
+        status: 'iniciado',
+        mensagem: 'Monitoramento iniciado. Conecte via WebSocket para receber resultados em tempo real.',
+      },
     });
   } catch (err: any) {
+    console.error('[MONITOR] erro ao iniciar sessão:', err.message);
     sessions.delete(sessionId);
     wsClients.delete(sessionId);
-    return res.status(500).json({ erro: err.message || 'Erro ao iniciar monitoramento.' });
+    return res.status(500).json({
+      success: false,
+      error: err.message || 'Erro ao iniciar monitoramento.',
+    });
   }
 });
 

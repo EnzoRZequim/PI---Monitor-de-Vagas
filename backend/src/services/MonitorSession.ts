@@ -1,6 +1,6 @@
-import { analisarOcupacao } from './AnaliseOcupacao';
+import { separarVagas } from './SeparadorVaga';
 import { buscarMapa } from './MapaStorage';
-import { VideoProcessor } from './VideoProcessor';
+import { Fatiador } from './Fatiador';
 import { MotionDetector } from './MotionDetector';
 import type { Mapa } from '../types/Mapa';
 import type { OcupacaoMapa, EstadoVaga } from '../types/Ocupacao';
@@ -70,7 +70,7 @@ export class MonitorSession {
 
       this.config.onStatus('IDLE', { message: 'Extraindo frames do vídeo...' });
       const outputDir = path.join(TEMP_DIR, `frames_${this.config.sessionId}`);
-      this.frames = await VideoProcessor.extractFrames({
+      this.frames = await Fatiador.extractFrames({
         inputPath: this.config.videoPath,
         outputDir: outputDir,
         intervalSeconds: this.config.intervalSeconds,
@@ -215,7 +215,7 @@ export class MonitorSession {
       });
 
       try {
-        const ocupacao = await analisarOcupacao(frameBuffer, this.mapa!);
+        const ocupacao = await separarVagas(frameBuffer, this.mapa!);
 
         // Salvar resultado em arquivo
         await this.salvarResultado(ocupacao);

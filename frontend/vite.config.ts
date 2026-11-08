@@ -7,7 +7,8 @@ export default defineConfig({
   server: {
     proxy: {
       "/mapas": "http://localhost:3000",
-      "/imagens": "http://localhost:3000"
+      "/imagens": "http://localhost:3000",
+      "/monitorar": "http://localhost:3000"
     }
   }
 });

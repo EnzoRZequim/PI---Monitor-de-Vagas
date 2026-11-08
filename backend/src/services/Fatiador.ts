@@ -13,7 +13,7 @@ export interface FrameExtractOptions {
   intervalSeconds?: number;
 }
 
-export class VideoProcessor {
+export class Fatiador {
   /**
    * Extrai frames de um vídeo usando ffmpeg.
    * Por padrão extrai 1 frame a cada `intervalSeconds` (padrão: 5s).
