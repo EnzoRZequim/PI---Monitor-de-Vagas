@@ -3,7 +3,7 @@ import express = require("express");
 import { createServer } from "node:http";
 
 import { ensureDirectories } from "./config/ensureDirectories";
-import { IMAGES_DIR } from "./config/paths";
+import { IMAGES_DIR, TEMP_DIR } from "./config/paths";
 import mapasRouter from "./routes/mapas";
 import { carregarClassificador } from "./services/ClassificadorVagas";
 import { monitorRouter, anexarWebSocket } from "./routes/monitor";
@@ -19,6 +19,7 @@ app.use("/mapas", mapasRouter);
 app.use("/monitorar", monitorRouter);
 
 app.use("/imagens", express.static(IMAGES_DIR));
+app.use("/temp", express.static(TEMP_DIR));
 
 app.get("/saude", (_req, res) => {
   res.json({ status: "ok" });

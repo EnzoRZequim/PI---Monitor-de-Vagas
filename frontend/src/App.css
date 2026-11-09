@@ -159,12 +159,55 @@ button {
   background: #b02a37;
 }
 
+.botao-reiniciar {
+  background: #0066cc;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.botao-reiniciar:hover {
+  background: #0052a3;
+}
+
 .tabela-vagas,
 .tabela-resumo {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
   margin-top: 8px;
+}
+
+/* Painel de histórico ocupa toda a largura disponível */
+.painel-historico {
+  grid-column: 1 / -1;
+}
+
+/* Container para tabelas com scroll horizontal quando necessário */
+.tabela-container {
+  overflow-x: auto;
+  max-width: 100%;
+  margin-top: 8px;
+}
+
+/* Tabela de histórico: ocupa todo o espaço, colunas distribuem naturalmente */
+.tabela-resumo {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  table-layout: auto;
+}
+
+.tabela-resumo th,
+.tabela-resumo td {
+  border: 1px solid #d1d5db;
+  padding: 6px 8px;
+  text-align: left;
+  white-space: normal;
+  overflow: visible;
 }
 
 .tabela-vagas th,
@@ -190,4 +233,56 @@ button {
   color: #dc3545;
   font-weight: 600;
   margin-top: 8px;
+}
+
+/* Vídeo com mapa sobreposto - proporção 16:9 */
+.painel-video {
+  grid-column: 2 / -1;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.video-wrapper {
+  position: relative;
+  display: inline-block;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
+.video-monitor {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  background: #000;
+}
+
+.canvas-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Controle à esquerda, coluna estreita */
+.painel-controle {
+  grid-column: 1 / 2;
+  max-width: 340px;
+}
+
+/* Resultado abaixo do vídeo, largura total */
+.painel-resultado {
+  grid-column: 1 / -1;
+  min-width: 260px;
+}
+
+/* Histórico ocupa toda a largura */
+.painel-historico {
+  grid-column: 1 / -1;
 }
