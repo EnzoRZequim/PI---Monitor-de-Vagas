@@ -17,7 +17,7 @@ function iniciar(nome, args, opcoes = {}) {
   return filho;
 }
 
-const backend = iniciar("backend", ["run", "dev"]);
+const backend = iniciar("backend", ["--prefix", "backend", "run", "dev"]);
 const frontend = iniciar("frontend", ["--prefix", "frontend", "run", "dev"]);
 
 let encerrando = false;

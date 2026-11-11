@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     // File Layout
-    "rootDir": "./backend/src",
+    "rootDir": "./src",
     "outDir": "./dist",
 
     // Environment Settings
@@ -27,13 +27,13 @@
   },
 
   "include": [
-    "backend/src/**/*.ts"
+    "src/**/*.ts"
   ],
 
   "exclude": [
     "node_modules",
     "dist",
-    "data",
-    "PKLot.v2-640.coco"
+    "../data",
+    "../PKLot.v2-640.coco"
   ]
 }

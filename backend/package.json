@@ -3,13 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "description": "Sistema de mapeamento e monitoramento de vagas de estacionamento.",
-  "main": "dist/backend/src/server.js",
+  "main": "dist/src/server.js",
   "scripts": {
-    "dev": "tsx watch backend/src/server.ts",
-    "dev:all": "node scripts/dev-all.js",
-    "dev:frontend": "npm --prefix frontend run dev",
+    "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "start": "node dist/backend/src/server.js"
+    "start": "node dist/src/server.js"
   },
   "keywords": [
     "estacionamento",

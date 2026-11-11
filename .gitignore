@@ -1,5 +1,6 @@
 # Dependências instaladas pelo NPM
 node_modules/
+backend/node_modules/
 
 
 # Arquivos JavaScript e declarações gerados pelo TypeScript
