@@ -244,6 +244,19 @@ export const grafico = {
   ],
 };
 
+// Mapa das vagas ("Bloco A (mapa)" no Figma). Fora da paleta, mas são os valores exatos do frame:
+// vagas com preenchimento a 50% e contorno sólido da mesma cor, e linhas de separação em black-100
+export const mapa = {
+  livre: "#34d399",
+  ocupada: "#fb7185",
+  preferencial: "#4fa3ff",
+  opacidadePreenchimento: 0.5,
+  espessuraContorno: 1.5258402824401855,
+  raioVaga: 7.629201412200928,
+  linha: paleta.black[100],
+  espessuraLinha: 3.051680564880371,
+};
+
 // Transições de hover/pressionado/liga-desliga (ms)
 export const animacao = { duracao: 200 };
 

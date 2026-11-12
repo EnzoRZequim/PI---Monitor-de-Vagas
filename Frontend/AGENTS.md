@@ -23,7 +23,8 @@ No código, o espelho do Figma é `src/theme.ts`.
    - `cartoes/`: `CartaoLocal` (Bar/v1), `CartaoDetalhes` (Locais/homepage), `CartaoLocalParceiro` (Locais/Parceiro), `CartaoBloco` (Locais › Bloco edit), `CartaoDado` (Dashboard/v1), `IndicadorOcupacao` (badge).
    - `navegacao/`: `BarraNavegacao` (Navbar), `Cabecalho` (topo no desktop), `NavegacaoParceiro`.
    - `graficos/`: `GraficoLinha` e `GraficoBarras` (BarLineChart da tela Dados), em `react-native-svg`, com as cores do token `grafico`.
-   - `telas/`: layouts e telas compartilhadas, como `TelaParceiro`, `TelaLista`, `FormularioLocal` e `LocalNaoEncontrado`.
+   - `mapa/`: `MapaVagas` (planta 2D das vagas com zoom e arrasto, frame "Bloco A (mapa)") e `LegendaMapa`, com as cores do token `mapa`.
+   - `telas/`: layouts e telas compartilhadas, como `TelaParceiro`, `TelaLista`, `TelaMapa`, `FormularioLocal` e `LocalNaoEncontrado`.
 6. **Ícones:** Feather (`@expo/vector-icons`), com o nome equivalente ao ícone do Figma (Rotate ccw → `rotate-ccw`, Trash → `trash-2` etc.).
 7. **Celular x desktop:** o Figma só tem telas de celular. Estilos de celular ficam em ramos `useTelaPequena()` / StyleSheet `celular`. Não altere o layout de desktop sem pedido explícito.
 8. **Copie do Figma, não do olho.** Pegue tamanhos, gaps, paddings, cores e textos exatos do nó do Figma (Figma MCP `get_design_context`/`get_screenshot`, ou o painel Dev Mode). Não copie erros de digitação do protótipo ("Endereco", "inicio").

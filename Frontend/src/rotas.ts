@@ -12,6 +12,11 @@ export function rotaDoCampus(parceiroId: string, campusId: string): Href {
   return { pathname: '/parceiros/[parceiroId]/[campusId]', params: { parceiroId, campusId } };
 }
 
+// Mapa de vagas de um bloco
+export function rotaDoBloco(parceiroId: string, campusId: string, blocoId: string): Href {
+  return { pathname: '/parceiros/[parceiroId]/[campusId]/[blocoId]', params: { parceiroId, campusId, blocoId } };
+}
+
 // Edição de um local na área do parceiro
 export function rotaDoLocalParceiro(localId: string): Href {
   return { pathname: '/area-parceiro/locais/[localId]', params: { localId } };

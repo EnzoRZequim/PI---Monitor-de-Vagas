@@ -1,12 +1,13 @@
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect } from 'react';
 
 import { CartaoLocal } from '@/components/cartoes/CartaoLocal';
 import { LocalNaoEncontrado } from '@/components/telas/LocalNaoEncontrado';
 import { TelaLista } from '@/components/telas/TelaLista';
 import { buscarCampus, buscarParceiro, type Bloco } from '@/dados/parceiros';
+import { ocupacaoDoBloco, useOcupacaoAoVivo } from '@/dados/ocupacaoAoVivo';
 import { salvarUltimoLocal } from '@/dados/ultimoLocal';
-import { rotaDoParceiro } from '@/rotas';
+import { rotaDoBloco, rotaDoParceiro } from '@/rotas';
 
 // Valores do Figma (celular): lista de 320px que rola, 19px entre os cartões e 8px até a barra
 const LISTA_BLOCOS = { alturaMaxima: 320, espacoItens: 19, espacoBarra: 8 };
@@ -18,6 +19,8 @@ export default function TelaBlocos() {
   const { parceiroId, campusId } = useLocalSearchParams<{ parceiroId: string; campusId: string }>();
   const parceiro = buscarParceiro(parceiroId);
   const campus = buscarCampus(parceiro, campusId);
+  // Os números dos cartões acompanham a ocupação ao vivo dos mapas
+  useOcupacaoAoVivo();
 
   // Abrir os blocos de um campus o registra como "Último local visitado" na tela inicial
   useEffect(() => {
@@ -42,9 +45,9 @@ export default function TelaBlocos() {
       renderItem={(bloco) => (
         <CartaoLocal
           nome={bloco.nome}
-          vagasOcupadas={bloco.vagasOcupadas}
-          vagasTotais={bloco.vagasTotais}
+          {...ocupacaoDoBloco(campus.id, bloco)}
           mostrarBarra
+          onPress={() => router.push(rotaDoBloco(parceiro.id, campus.id, bloco.id))}
         />
       )}
     />

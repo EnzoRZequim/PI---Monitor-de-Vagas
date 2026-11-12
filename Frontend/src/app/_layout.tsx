@@ -5,6 +5,7 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SystemUI from 'expo-system-ui';
 import { StatusBar } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { cores } from '@/theme';
 
@@ -27,13 +28,14 @@ export default function RootLayout() {
   if (!fontesCarregadas) return null;
 
   return (
-    <>
+    // Os gestos do mapa de vagas (zoom e arrasto) precisam desta raiz
+    <GestureHandlerRootView style={{ flex: 1 }}>
       {/* backgroundColor só vale em Androids sem edge-to-edge (ex.: Expo Go no Android 14 ou anterior),
           onde a barra é opaca; nos demais ela é transparente e é ignorado */}
       <StatusBar barStyle="dark-content" backgroundColor={cores.fundo} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: cores.fundo } }}>
         <Stack.Screen name="index" options={{ title: 'Vaga Livre' }} />
       </Stack>
-    </>
+    </GestureHandlerRootView>
   );
 }

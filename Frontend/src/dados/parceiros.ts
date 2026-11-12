@@ -1,9 +1,16 @@
+import { VAGAS_TESTE, VAGAS_VIDEO } from '@/dados/mapasBackend';
+import { ocupacaoDoBloco } from '@/dados/ocupacaoAoVivo';
+
 // Dados provisórios até a integração com a API do backend
 export type Bloco = {
   id: string;
   nome: string;
   vagasOcupadas: number;
   vagasTotais: number;
+  // Vagas que já existem no backend (mesmo ID e nome); sem isso a planta gera os IDs e nomes
+  vagas?: { ID: string; Nome: string }[];
+  // A simulação ao vivo não mexe na ocupação deste bloco
+  ocupacaoFixa?: boolean;
 };
 
 export type Campus = {
@@ -23,7 +30,7 @@ export type Ocupacao = {
   vagasTotais: number;
 };
 
-export const parceiros: Parceiro[] = [
+const parceirosReais: Parceiro[] = [
   {
     id: 'imt',
     nome: 'Instituto Mauá de Tecnologia',
@@ -94,13 +101,39 @@ export const parceiros: Parceiro[] = [
   },
 ];
 
+// Só em desenvolvimento: campus para testar o mapa de vagas e a integração com o backend
+const parceiroDeTeste: Parceiro = {
+  id: 'teste',
+  nome: 'Ambiente de teste',
+  campi: [
+    {
+      id: 'campus-teste',
+      nome: 'Campus de teste',
+      blocos: [
+        // Mesmas vagas (ID e nome) dos mapas "Teste" e "Video" do backend
+        { id: 'teste', nome: 'Teste', vagasOcupadas: 10, vagasTotais: VAGAS_TESTE.length, vagas: VAGAS_TESTE },
+        { id: 'video', nome: 'Vídeo', vagasOcupadas: 18, vagasTotais: VAGAS_VIDEO.length, vagas: VAGAS_VIDEO },
+        // Casos extremos: bloco cheio e que não muda, e bloco com poucas vagas
+        { id: 'lotado', nome: 'Lotado', vagasOcupadas: 20, vagasTotais: 20, ocupacaoFixa: true },
+        { id: 'pequeno', nome: 'Pequeno', vagasOcupadas: 2, vagasTotais: 6 },
+      ],
+    },
+  ],
+};
+
+export const parceiros: Parceiro[] = __DEV__ ? [...parceirosReais, parceiroDeTeste] : parceirosReais;
+
 // Campus e parceiro mostram a soma das vagas dos seus blocos
+// (com a ocupação ao vivo, se o mapa do bloco já foi aberto)
 export function ocupacaoDoCampus(campus: Campus): Ocupacao {
   return campus.blocos.reduce(
-    (total, bloco) => ({
-      vagasOcupadas: total.vagasOcupadas + bloco.vagasOcupadas,
-      vagasTotais: total.vagasTotais + bloco.vagasTotais,
-    }),
+    (total, bloco) => {
+      const atual = ocupacaoDoBloco(campus.id, bloco);
+      return {
+        vagasOcupadas: total.vagasOcupadas + atual.vagasOcupadas,
+        vagasTotais: total.vagasTotais + atual.vagasTotais,
+      };
+    },
     { vagasOcupadas: 0, vagasTotais: 0 },
   );
 }
