@@ -1,6 +1,6 @@
 import { Redirect, useLocalSearchParams } from 'expo-router';
 
-import { FormularioLocal } from '@/components/FormularioLocal';
+import { FormularioLocal } from '@/components/telas/FormularioLocal';
 import { useLocaisParceiro } from '@/dados/areaParceiro';
 
 export default function TelaEditarLocal() {

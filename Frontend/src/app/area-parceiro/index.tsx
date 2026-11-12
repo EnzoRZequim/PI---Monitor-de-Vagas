@@ -1,11 +1,11 @@
 import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { CartaoDado } from '@/components/CartaoDado';
-import { CartaoDetalhes } from '@/components/CartaoDetalhes';
-import { IndicadorOcupacao } from '@/components/IndicadorOcupacao';
-import { LinkAcao } from '@/components/LinkAcao';
-import { TelaParceiro } from '@/components/TelaParceiro';
+import { CartaoDado } from '@/components/cartoes/CartaoDado';
+import { CartaoDetalhes } from '@/components/cartoes/CartaoDetalhes';
+import { IndicadorOcupacao } from '@/components/cartoes/IndicadorOcupacao';
+import { LinkAcao } from '@/components/botoes/LinkAcao';
+import { TelaParceiro } from '@/components/telas/TelaParceiro';
 import {
   ocupacaoDoLocal,
   parceiroLogado,
@@ -25,7 +25,8 @@ export default function TelaPainelParceiro() {
   const percentualCameras = porcentagem(resumo.camerasAtivas, resumo.camerasTotais);
 
   // No desktop os quatro cartões dividem a linha; no celular ficam dois por linha, como no Figma
-  const estiloDado = telaPequena ? celular.dado : styles.dado;
+  const estiloDado = telaPequena ? undefined : styles.dado;
+  const divisor = telaPequena && <View style={celular.divisor} />;
 
   return (
     <TelaParceiro
@@ -33,8 +34,10 @@ export default function TelaPainelParceiro() {
       tituloAba="Área do parceiro"
       titulo={`Olá, ${parceiroLogado.nome}.`}
       subtitulo={`${resumo.locaisAtivos} estacionamento(s) ativo(s)`}
+      espacoTitulo={ESPACO_SECOES_CELULAR}
     >
-      <View style={styles.dados}>
+      {divisor}
+      <View style={[styles.dados, telaPequena && celular.dados]}>
         <CartaoDado
           titulo="Vagas Monitoradas"
           valor={String(resumo.vagasTotais)}
@@ -44,7 +47,8 @@ export default function TelaPainelParceiro() {
         <CartaoDado
           titulo="Ocupação média"
           valor={`${porcentagem(resumo.vagasOcupadas, resumo.vagasTotais)}%`}
-          legenda={`${resumo.vagasOcupadas} vagas ocupadas`}
+          // No Figma (celular) este cartão não tem legenda
+          legenda={telaPequena ? undefined : `${resumo.vagasOcupadas} vagas ocupadas`}
           style={estiloDado}
         />
         <CartaoDado
@@ -54,13 +58,14 @@ export default function TelaPainelParceiro() {
           style={estiloDado}
         />
         <CartaoDado
-          titulo="Locais Registrados"
+          titulo={telaPequena ? 'Vagas Registradas' : 'Locais Registrados'}
           valor={String(locais.length)}
           style={estiloDado}
         />
       </View>
+      {divisor}
 
-      <View style={styles.secao}>
+      <View style={[styles.secao, telaPequena && celular.secao]}>
         <Text style={styles.tituloSecao}>Seus locais</Text>
         <LinkAcao titulo="+ adicionar local" onPress={() => router.push('/area-parceiro/locais/novo')} />
       </View>
@@ -133,10 +138,24 @@ const styles = StyleSheet.create({
   },
 });
 
+// Valores do Figma ("Dashboard", 393px)
+const ESPACO_SECOES_CELULAR = 40;
+
 const celular = StyleSheet.create({
-  dado: {
-    // Dois por linha, descontando o gap
-    width: '46%',
-    flexGrow: 1,
+  // Linha curta e centralizada entre as seções
+  divisor: {
+    alignSelf: 'center',
+    width: 150,
+    height: 2,
+    backgroundColor: cores.primaria,
+    marginBottom: ESPACO_SECOES_CELULAR,
+  },
+  // Cartões de tamanho fixo, dois por linha, centralizados
+  dados: {
+    justifyContent: 'center',
+    marginBottom: ESPACO_SECOES_CELULAR,
+  },
+  secao: {
+    marginBottom: 22,
   },
 });

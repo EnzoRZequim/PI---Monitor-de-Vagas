@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { CaixaGradiente } from '@/components/CaixaGradiente';
+import { CaixaGradiente } from '@/components/base/CaixaGradiente';
 import { cores, espaco, fontes, gradientes, raio, tipografia } from '@/theme';
 
 type Props = {

@@ -2,13 +2,14 @@ import { Feather } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Botao } from '@/components/Botao';
-import { BotaoIcone } from '@/components/BotaoIcone';
-import { CampoTexto } from '@/components/CampoTexto';
-import { CartaoBloco } from '@/components/CartaoBloco';
-import { DialogoConfirmacao } from '@/components/DialogoConfirmacao';
-import { LinkAcao } from '@/components/LinkAcao';
-import { TelaParceiro } from '@/components/TelaParceiro';
+import { Botao } from '@/components/botoes/Botao';
+import { BotaoIcone } from '@/components/botoes/BotaoIcone';
+import { CampoTexto } from '@/components/campos/CampoTexto';
+import { CartaoBloco } from '@/components/cartoes/CartaoBloco';
+import { DialogoConfirmacao } from '@/components/base/DialogoConfirmacao';
+import { LinkAcao } from '@/components/botoes/LinkAcao';
+import { ListaRolavel } from '@/components/base/ListaRolavel';
+import { TelaParceiro } from '@/components/telas/TelaParceiro';
 import { novoId, salvarLocal, type BlocoParceiro, type LocalParceiro } from '@/dados/areaParceiro';
 import { useTelaPequena } from '@/hooks/useTelaPequena';
 import { voltar } from '@/rotas';
@@ -85,20 +86,35 @@ export function FormularioLocal({ local }: { local?: LocalParceiro }) {
     voltarParaLocais();
   }
 
+  const cartoesBlocos = blocos.map((bloco) => (
+    <CartaoBloco
+      key={bloco.id}
+      nome={bloco.nome}
+      vagas={bloco.vagasTotais}
+      ativo={bloco.ativo}
+      onChangeAtivo={(ativo) => alterarBloco(bloco.id, { ativo })}
+      onRemover={() => setRemovendo(bloco)}
+    />
+  ));
+
+  let subtitulo = 'Cadastre local e blocos';
+  if (local) subtitulo = telaPequena ? 'Edite as informações' : 'Altere os dados e os blocos do local.';
+
   return (
     <TelaParceiro
       secao="locais"
       tituloAba={local ? 'Editar local' : 'Novo local'}
       titulo={local ? 'Editar local' : 'Novo local'}
-      subtitulo={local ? 'Altere os dados e os blocos do local.' : 'Cadastre local e blocos'}
+      subtitulo={subtitulo}
     >
-      <View style={[styles.colunas, telaPequena && celular.colunas]}>
-        <View style={styles.coluna}>
-          <View style={styles.campo}>
+      {/* No celular as colunas viram uma pilha só, como no Figma */}
+      <View style={telaPequena ? celular.pilha : styles.colunas}>
+        <View style={telaPequena ? celular.pilha : styles.coluna}>
+          <View style={[styles.campo, telaPequena && celular.campo]}>
             <Text style={styles.rotulo}>Nome</Text>
             <CampoTexto value={nome} onChangeText={setNome} placeholder="Ex: FMABC" accessibilityLabel="Nome" />
           </View>
-          <View style={styles.campo}>
+          <View style={[styles.campo, telaPequena && celular.campo]}>
             <Text style={styles.rotulo}>Endereço</Text>
             <CampoTexto
               value={endereco}
@@ -110,22 +126,25 @@ export function FormularioLocal({ local }: { local?: LocalParceiro }) {
           </View>
         </View>
 
-        <View style={[styles.coluna, styles.campo]}>
-          <View style={styles.cabecalhoBlocos}>
-            <Text style={styles.rotulo}>Blocos monitorados</Text>
+        <View style={telaPequena ? celular.secaoBlocos : [styles.coluna, styles.campo]}>
+          <View style={[styles.cabecalhoBlocos, telaPequena && celular.cabecalhoBlocos]}>
+            <Text style={[styles.rotulo, telaPequena && celular.rotuloBlocos]}>Blocos monitorados</Text>
             <LinkAcao titulo="+ adicionar bloco" onPress={abrirNovoBloco} />
           </View>
 
-          {blocos.map((bloco) => (
-            <CartaoBloco
-              key={bloco.id}
-              nome={bloco.nome}
-              vagas={bloco.vagasTotais}
-              ativo={bloco.ativo}
-              onChangeAtivo={(ativo) => alterarBloco(bloco.id, { ativo })}
-              onRemover={() => setRemovendo(bloco)}
-            />
-          ))}
+          {telaPequena ? (
+            blocos.length > 0 && (
+              <ListaRolavel
+                alturaMaxima={ALTURA_LISTA_BLOCOS}
+                espacoItens={espaco[2]}
+                espacoBarra={ESPACO_BARRA_BLOCOS}
+              >
+                {cartoesBlocos}
+              </ListaRolavel>
+            )
+          ) : (
+            cartoesBlocos
+          )}
 
           {novoBloco && (
             <View style={styles.novoBloco}>
@@ -171,9 +190,9 @@ export function FormularioLocal({ local }: { local?: LocalParceiro }) {
         </View>
       </View>
 
-      {erro !== '' && <Text style={styles.erro}>{erro}</Text>}
+      {erro !== '' && <Text style={[styles.erro, telaPequena && celular.separado]}>{erro}</Text>}
 
-      <View style={styles.botoes}>
+      <View style={[styles.botoes, telaPequena && celular.separado]}>
         <BotaoIcone tipo="secundario" titulo="Voltar" icone="rotate-ccw" onPress={voltarParaLocais} />
         <BotaoIcone titulo="Enviar" icone="send" onPress={enviar} />
       </View>
@@ -250,10 +269,31 @@ const styles = StyleSheet.create({
   },
 });
 
+// Valores do Figma ("Novo local" e "Editar local", 393px)
+const ESPACO_SECOES = 28;
+// A lista mostra pouco mais de 3 blocos e rola o resto
+const ALTURA_LISTA_BLOCOS = 215;
+const ESPACO_BARRA_BLOCOS = 10;
+
 const celular = StyleSheet.create({
-  colunas: {
-    flexDirection: 'column',
-    alignItems: 'stretch',
-    gap: espaco[8],
+  // Nome, Endereço, Blocos e botões, um embaixo do outro
+  pilha: {
+    gap: ESPACO_SECOES,
+  },
+  campo: {
+    gap: espaco[2],
+  },
+  secaoBlocos: {
+    gap: espaco[4],
+  },
+  // Título em duas linhas e "+ adicionar bloco" sempre ao lado
+  cabecalhoBlocos: {
+    flexWrap: 'nowrap',
+  },
+  rotuloBlocos: {
+    width: 150,
+  },
+  separado: {
+    marginTop: ESPACO_SECOES,
   },
 });

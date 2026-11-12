@@ -12,7 +12,8 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { CaixaGradiente } from '@/components/CaixaGradiente';
+import { CaixaGradiente } from '@/components/base/CaixaGradiente';
+import { useTelaPequena } from '@/hooks/useTelaPequena';
 import { cores, espaco, fontes, gradientes, raio, sombras, tipografia } from '@/theme';
 
 type Props = Omit<TextInputProps, 'style'> & {
@@ -45,6 +46,7 @@ type SelecaoProps = {
 // Select do Figma. O Figma só define o campo fechado; a lista aberta segue o estilo dos cartões.
 export function CampoSelecao({ opcoes, valor, onChange, placeholder, style }: SelecaoProps) {
   const [aberto, setAberto] = useState(false);
+  const telaPequena = useTelaPequena();
   const selecionada = opcoes.find((opcao) => opcao.valor === valor);
 
   return (
@@ -56,7 +58,10 @@ export function CampoSelecao({ opcoes, valor, onChange, placeholder, style }: Se
         accessibilityLabel={placeholder}
       >
         <Moldura foco={aberto} raioCampo={raio.pilula} paddingVertical={14}>
-          <Text style={[styles.texto, { color: selecionada ? cores.texto : corDoTexto(aberto) }]} numberOfLines={1}>
+          <Text
+            style={[styles.texto, { color: selecionada ? corDoValor(telaPequena) : corDoTexto(aberto) }]}
+            numberOfLines={1}
+          >
             {selecionada?.rotulo ?? placeholder}
           </Text>
           <Feather name="chevron-down" size={24} color={corDoIcone(aberto)} />
@@ -81,7 +86,9 @@ export function CampoSelecao({ opcoes, valor, onChange, placeholder, style }: Se
               accessibilityRole="button"
               style={({ pressed }) => [styles.opcao, pressed && styles.opcaoPressionada]}
             >
-              <Text style={[styles.texto, opcao.valor === valor && styles.opcaoSelecionada]}>{opcao.rotulo}</Text>
+              <Text style={[styles.texto, opcao.valor === valor ? styles.opcaoSelecionada : styles.opcaoNaoSelecionada]}>
+                {opcao.rotulo}
+              </Text>
             </Pressable>
           ))}
         </CaixaGradiente>
@@ -93,6 +100,8 @@ export function CampoSelecao({ opcoes, valor, onChange, placeholder, style }: Se
 // Placeholder e ícone ficam azuis quando o campo está em foco
 const corDoTexto = (foco: boolean) => (foco ? cores.secundaria : cores.textoSuave);
 const corDoIcone = (foco: boolean) => (foco ? cores.primariaClara : cores.textoSuave);
+// Texto digitado/selecionado: azul suave no celular (placeholder continua cinza)
+const corDoValor = (telaPequena: boolean) => (telaPequena ? cores.secundaria : cores.texto);
 
 type CampoProps = Props & {
   raioCampo: number;
@@ -102,6 +111,7 @@ type CampoProps = Props & {
 
 function Campo({ raioCampo, paddingVertical, icone, style, onFocus, onBlur, ...props }: CampoProps) {
   const [foco, setFoco] = useState(false);
+  const telaPequena = useTelaPequena();
 
   return (
     <Moldura foco={foco} raioCampo={raioCampo} paddingVertical={paddingVertical} style={style}>
@@ -118,7 +128,7 @@ function Campo({ raioCampo, paddingVertical, icone, style, onFocus, onBlur, ...p
         placeholderTextColor={corDoTexto(foco)}
         // Remove o sublinhado nativo do Android, que escurece com o foco; a borda já indica o foco
         underlineColorAndroid="transparent"
-        style={styles.campo}
+        style={[styles.campo, { color: corDoValor(telaPequena) }]}
       />
       {icone && <Feather name={icone} size={24} color={corDoIcone(foco)} />}
     </Moldura>
@@ -139,13 +149,17 @@ const SOMBRA_NO_FOCO = Platform.OS !== 'android';
 
 // Fundo, borda e sombra comuns a todos os campos
 function Moldura({ foco, raioCampo, paddingVertical, style, children }: MolduraProps) {
+  const telaPequena = useTelaPequena();
+  // No celular segue o componente Input/Search/Select do Figma: borda própria e 10px até o ícone
+  const bordaNormal = telaPequena ? gradientes.campo.borda : gradientes.neutro.borda;
+
   return (
     <CaixaGradiente
-      borda={foco ? gradientes.foco.borda : gradientes.neutro.borda}
+      borda={foco ? gradientes.foco.borda : bordaNormal}
       fundo={cores.superficie}
       raio={raioCampo}
       style={[foco && SOMBRA_NO_FOCO && styles.sombraFoco, style]}
-      estiloConteudo={[styles.conteudo, { paddingVertical }]}
+      estiloConteudo={[styles.conteudo, telaPequena && styles.conteudoCelular, { paddingVertical }]}
     >
       {children}
     </CaixaGradiente>
@@ -158,6 +172,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: espaco[2],
     paddingHorizontal: espaco[4],
+  },
+  conteudoCelular: {
+    gap: 10,
   },
   sombraFoco: {
     boxShadow: sombras.foco,
@@ -196,5 +213,8 @@ const styles = StyleSheet.create({
   opcaoSelecionada: {
     fontFamily: fontes.inter.seminegrito,
     color: cores.primaria,
+  },
+  opcaoNaoSelecionada: {
+    color: cores.textoSuave,
   },
 });

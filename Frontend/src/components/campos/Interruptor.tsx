@@ -2,7 +2,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 
-import { CaixaGradiente } from '@/components/CaixaGradiente';
+import { CaixaGradiente } from '@/components/base/CaixaGradiente';
+import { useTelaPequena } from '@/hooks/useTelaPequena';
 import { animacao, cores, gradientes, raio } from '@/theme';
 
 type Props = {
@@ -23,6 +24,7 @@ const CURSO = LARGURA - ESPESSURA * 2 - FOLGA_X * 2 - PINO;
 
 // Botão liga/desliga ("activate" no Figma)
 export function Interruptor({ ativo, onChange, rotulo }: Props) {
+  const telaPequena = useTelaPequena();
   const progresso = useRef(new Animated.Value(ativo ? 1 : 0)).current;
 
   useEffect(() => {
@@ -46,7 +48,8 @@ export function Interruptor({ ativo, onChange, rotulo }: Props) {
     >
       {/* Desligado por baixo; o ligado aparece por cima com fade */}
       <CaixaGradiente
-        borda={[cores.inativo, cores.inativo]}
+        // No celular segue o degradê do Figma; no desktop mantém a borda sólida
+        borda={telaPequena ? gradientes.inativo.borda : [cores.inativo, cores.inativo]}
         fundo={gradientes.secundario.fundo}
         raio={raio.pilula}
         espessura={ESPESSURA}

@@ -41,7 +41,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 15,
     minWidth: 240,
-    padding: espaco[2],
+    // Padding das telas do Figma (o componente base usa 8px em volta)
+    paddingVertical: 18,
+    paddingHorizontal: espaco[6],
   },
   item: {
     minWidth: 40,

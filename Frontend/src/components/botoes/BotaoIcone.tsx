@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { CaixaGradiente } from '@/components/CaixaGradiente';
+import { CaixaGradiente } from '@/components/base/CaixaGradiente';
 import { useDestaque } from '@/hooks/useDestaque';
 import { cores, espaco, fontes, gradientes, raio, tamanhoFonte, tipografia } from '@/theme';
 
@@ -52,7 +52,12 @@ export function BotaoIcone({ titulo, icone, tipo = 'primario', grande = false, o
       onLayout={(e) => setLargura(e.nativeEvent.layout.width)}
       accessibilityRole="button"
     >
-      <CaixaGradiente {...gradientes.primario} raio={raio.pilula} espessura={ESPESSURA} estiloConteudo={styles.conteudo}>
+      <CaixaGradiente
+        {...gradientes.primario}
+        raio={raio.pilula}
+        espessura={ESPESSURA}
+        estiloConteudo={[styles.conteudo, grande && styles.conteudoGrande]}
+      >
         <Text style={[styles.titulo, grande && styles.tituloGrande, { color: cores.textoInverso }]}>{titulo}</Text>
         <View style={styles.espacoIcone} />
         <Animated.View style={[styles.circulo, circulo]}>
@@ -88,7 +93,7 @@ function Conteudo({ titulo, icone, grande, cor, corIcone = cor, preenchido = fal
       fundo={preenchido ? gradientes.primario.fundo : cores.fundo}
       raio={raio.pilula}
       espessura={ESPESSURA}
-      estiloConteudo={styles.conteudo}
+      estiloConteudo={[styles.conteudo, grande && styles.conteudoGrande]}
     >
       <Text style={[styles.titulo, grande && styles.tituloGrande, { color: cor }]}>{titulo}</Text>
       <View style={[styles.espacoIcone, styles.centro]}>
@@ -113,6 +118,10 @@ const styles = StyleSheet.create({
   },
   tituloGrande: {
     fontSize: tamanhoFonte.lg,
+  },
+  // "Acessar Locais" do Figma: 16px à esquerda em vez de 12
+  conteudoGrande: {
+    paddingLeft: espaco[4],
   },
   espacoIcone: {
     width: CIRCULO,

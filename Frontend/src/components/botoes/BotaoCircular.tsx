@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { Pressable, StyleSheet } from 'react-native';
 
-import { CaixaGradiente } from '@/components/CaixaGradiente';
+import { CaixaGradiente } from '@/components/base/CaixaGradiente';
 import { cores, gradientes, raio } from '@/theme';
 
 type Props = {

@@ -4,10 +4,10 @@ import { useRef, useState, type ReactNode } from 'react';
 import { KeyboardAvoidingView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Botao } from '@/components/Botao';
-import { BotaoIcone } from '@/components/BotaoIcone';
-import { Cabecalho } from '@/components/Cabecalho';
-import { CampoTexto } from '@/components/CampoTexto';
+import { Botao } from '@/components/botoes/Botao';
+import { BotaoIcone } from '@/components/botoes/BotaoIcone';
+import { Cabecalho } from '@/components/navegacao/Cabecalho';
+import { CampoTexto } from '@/components/campos/CampoTexto';
 import { cnpjValido, formatarCnpj, limparCnpj } from '@/cnpj';
 import { useTelaPequena } from '@/hooks/useTelaPequena';
 import { voltar } from '@/rotas';
@@ -60,43 +60,50 @@ export default function TelaTornarSeParceiro() {
     if (Object.keys(novos).length === 0) setEnviado(true);
   }
 
-  const paddingCelular = telaPequena && {
-    paddingHorizontal: espaco[4],
-    paddingTop: insets.top + espaco[8],
-    paddingBottom: insets.bottom + espaco[8],
-  };
+  // Figma: 50px acima e abaixo; o formulário começa no topo e a confirmação fica centralizada
+  const paddingCelular = telaPequena && [
+    {
+      paddingHorizontal: espaco[4],
+      paddingTop: insets.top + ESPACO_BORDA_CELULAR,
+      paddingBottom: insets.bottom + ESPACO_BORDA_CELULAR,
+    },
+    !enviado && celular.rolagemFormulario,
+  ];
 
   return (
     <View style={styles.tela}>
-      <Stack.Screen options={{ title: `${enviado ? 'Tudo certo' : 'Tornar-se Parceiro'} | Vagas Maua` }} />
+      <Stack.Screen options={{ title: `${enviado ? 'Tudo certo' : 'Tornar-se Parceiro'} | Vaga Livre` }} />
       {!telaPequena && <Cabecalho />}
 
       {/* Empurra o formulário para cima quando o teclado abre, deixando os botões à vista */}
       <KeyboardAvoidingView behavior="padding" style={styles.preencher}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.rolagem, paddingCelular]}>
           {enviado ? (
-            // Na confirmação tudo fica centralizado, alinhado ao botão "Voltar ao menu"
-            <View style={[styles.formulario, styles.centro]}>
-              <View style={[styles.textos, styles.centro]}>
+            // No desktop tudo fica centralizado, alinhado ao botão "Voltar ao menu". No celular os
+            // textos ficam à esquerda e só o botão é centralizado, como no Figma.
+            <View style={[styles.formulario, !telaPequena && styles.centro, telaPequena && celular.confirmacao]}>
+              <View style={[styles.textos, !telaPequena && styles.centro, telaPequena && celular.textosConfirmacao]}>
                 <View style={styles.tituloComIcone}>
                   <Text style={[styles.titulo, telaPequena && styles.tituloCelular]}>Tudo certo</Text>
-                  <Feather name="check-circle" size={telaPequena ? 32 : 44} color={cores.primaria} />
+                  <Feather name="check-circle" size={telaPequena ? 36 : 44} color={cores.primaria} />
                 </View>
-                <Text style={[styles.subtitulo, styles.textoCentro]}>Dados enviados com sucesso!</Text>
+                <Text style={[styles.subtitulo, !telaPequena && styles.textoCentro]}>Dados enviados com sucesso!</Text>
               </View>
-              <Text style={[styles.aviso, styles.textoCentro]}>Em breve nossa equipe retornará com uma resposta!</Text>
-              <View>
+              <Text style={[styles.aviso, !telaPequena && styles.textoCentro, telaPequena && celular.aviso]}>
+                Em breve nossa equipe retornará com uma resposta!
+              </Text>
+              <View style={telaPequena && styles.centro}>
                 <BotaoIcone titulo="Voltar ao menu" icone="rotate-ccw" onPress={() => router.replace('/')} />
               </View>
             </View>
           ) : (
             <View style={styles.formulario}>
-              <View style={styles.textos}>
+              <View style={[styles.textos, telaPequena && celular.textos]}>
                 <Text style={[styles.titulo, telaPequena && styles.tituloCelular]}>Tornar-se Parceiro</Text>
                 <Text style={styles.subtitulo}>Seu estacionamento, suas vagas</Text>
               </View>
 
-              <View style={styles.campos}>
+              <View style={[styles.campos, telaPequena && celular.campos]}>
                 <Pergunta rotulo="Nome" erro={erros.nome}>
                   <CampoTexto
                     value={nome}
@@ -168,8 +175,8 @@ export default function TelaTornarSeParceiro() {
                   />
                 </Pergunta>
 
-                <Pergunta rotulo="Possui câmeras nas vagas?" erro={erros.cameras}>
-                  <View style={styles.opcoes} accessibilityRole="radiogroup">
+                <Pergunta rotulo="Possui câmeras nas vagas?" erro={erros.cameras} espacoCelular={20}>
+                  <View style={[styles.opcoes, telaPequena && celular.opcoes]} accessibilityRole="radiogroup">
                     {[
                       { titulo: 'Não', valor: false },
                       { titulo: 'Sim', valor: true },
@@ -189,9 +196,9 @@ export default function TelaTornarSeParceiro() {
                 </Pergunta>
               </View>
 
-              <View style={styles.divisor} />
+              <View style={[styles.divisor, telaPequena && celular.separado]} />
 
-              <View style={styles.botoes}>
+              <View style={[styles.botoes, telaPequena && celular.separado]}>
                 <BotaoIcone tipo="secundario" titulo="Voltar" icone="rotate-ccw" onPress={() => voltar('/')} />
                 <BotaoIcone titulo="Enviar" icone="send" onPress={enviar} />
               </View>
@@ -203,10 +210,20 @@ export default function TelaTornarSeParceiro() {
   );
 }
 
+type PerguntaProps = {
+  rotulo: string;
+  erro?: string;
+  // Distância do rótulo até o campo no celular (padrão do Figma: 8px)
+  espacoCelular?: number;
+  children: ReactNode;
+};
+
 // Rótulo, campo e o erro dele logo abaixo
-function Pergunta({ rotulo, erro, children }: { rotulo: string; erro?: string; children: ReactNode }) {
+function Pergunta({ rotulo, erro, espacoCelular = espaco[2], children }: PerguntaProps) {
+  const telaPequena = useTelaPequena();
+
   return (
-    <View style={styles.pergunta}>
+    <View style={[styles.pergunta, telaPequena && { gap: espacoCelular }]}>
       <Text style={styles.rotulo}>{rotulo}</Text>
       {children}
       {erro && (
@@ -302,5 +319,37 @@ const styles = StyleSheet.create({
   // Para textos que quebram linha (ex.: no celular)
   textoCentro: {
     textAlign: 'center',
+  },
+});
+
+// Valores do Figma ("Tornar-se Parceiro" e "Tudo certo", 393px)
+const ESPACO_BORDA_CELULAR = 50;
+
+const celular = StyleSheet.create({
+  rolagemFormulario: {
+    justifyContent: 'flex-start',
+  },
+  textos: {
+    gap: espaco[4],
+    marginBottom: 36,
+  },
+  campos: {
+    gap: 28,
+  },
+  opcoes: {
+    gap: espaco[6],
+  },
+  separado: {
+    marginTop: 36,
+  },
+  confirmacao: {
+    gap: 53,
+  },
+  textosConfirmacao: {
+    gap: 11,
+    marginBottom: 0,
+  },
+  aviso: {
+    marginBottom: 0,
   },
 });

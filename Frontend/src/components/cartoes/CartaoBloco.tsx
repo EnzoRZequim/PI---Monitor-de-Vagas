@@ -1,8 +1,9 @@
 import { Feather } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { CaixaGradiente } from '@/components/CaixaGradiente';
-import { Interruptor } from '@/components/Interruptor';
+import { CaixaGradiente } from '@/components/base/CaixaGradiente';
+import { Interruptor } from '@/components/campos/Interruptor';
+import { useTelaPequena } from '@/hooks/useTelaPequena';
 import { cores, espaco, fontes, gradientes, raio, tipografia } from '@/theme';
 
 type Props = {
@@ -16,9 +17,12 @@ type Props = {
 
 // Linha de bloco na edição de um local ("Locais" no Figma)
 export function CartaoBloco({ nome, vagas, onRemover, ativo = false, onChangeAtivo }: Props) {
+  const telaPequena = useTelaPequena();
+
   return (
     <CaixaGradiente
-      borda={gradientes.neutro.borda}
+      // No celular segue a borda do componente "Locais/Bloco" do Figma
+      borda={telaPequena ? gradientes.campo.borda : gradientes.neutro.borda}
       fundo={cores.superficie}
       raio={raio.cartao}
       estiloConteudo={styles.conteudo}

@@ -3,7 +3,7 @@ import { router, type Href } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { BarraNavegacao } from '@/components/BarraNavegacao';
+import { BarraNavegacao } from '@/components/navegacao/BarraNavegacao';
 import { cores, espaco, fontes, tipografia } from '@/theme';
 
 export type SecaoParceiro = 'inicio' | 'locais' | 'dados';
@@ -20,8 +20,7 @@ type Item = {
 const ITENS: Item[] = [
   { titulo: 'Início', icone: 'home', secao: 'inicio', rota: '/area-parceiro' },
   { titulo: 'Locais', icone: 'grid', secao: 'locais', rota: '/area-parceiro/locais' },
-  // Sem tela no Figma ainda
-  { titulo: 'Dados', icone: 'database', secao: 'dados' },
+  { titulo: 'Dados', icone: 'database', secao: 'dados', rota: '/area-parceiro/dados' },
   // Sem autenticação: sair só volta para a tela inicial
   { titulo: 'Sair', icone: 'log-out', rota: '/', sair: true },
 ];

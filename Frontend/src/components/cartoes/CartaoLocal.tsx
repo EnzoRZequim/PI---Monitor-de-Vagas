@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { CaixaGradiente } from '@/components/CaixaGradiente';
-import { corDaOcupacao, IndicadorOcupacao, taxaDeOcupacao } from '@/components/IndicadorOcupacao';
+import { CaixaGradiente } from '@/components/base/CaixaGradiente';
+import { corDaOcupacao, IndicadorOcupacao, taxaDeOcupacao } from '@/components/cartoes/IndicadorOcupacao';
+import { useTelaPequena } from '@/hooks/useTelaPequena';
 import { cores, espaco, gradientes, raio, tipografia } from '@/theme';
 
 type Props = {
@@ -18,6 +19,7 @@ type Props = {
 export function CartaoLocal({ nome, vagasOcupadas, vagasTotais, mostrarBarra = false, onPress }: Props) {
   const [hover, setHover] = useState(false);
   const taxa = taxaDeOcupacao(vagasOcupadas, vagasTotais);
+  const telaPequena = useTelaPequena();
 
   return (
     <Pressable
@@ -45,6 +47,7 @@ export function CartaoLocal({ nome, vagasOcupadas, vagasTotais, mostrarBarra = f
           <View
             style={[
               styles.barra,
+              telaPequena && styles.barraCelular,
               { width: `${taxa * 100}%`, backgroundColor: corDaOcupacao(vagasOcupadas, vagasTotais).barra },
             ]}
           />
@@ -73,6 +76,11 @@ const styles = StyleSheet.create({
   },
   barra: {
     height: 3,
-    borderRadius: 999,
+    borderRadius: raio.pilula,
+  },
+  // No Figma a barra é uma linha de altura 0 com traço de 3px centralizado: não soma altura ao
+  // cartão (76px), então ela avança metade do traço para cada lado
+  barraCelular: {
+    marginVertical: -1.5,
   },
 });

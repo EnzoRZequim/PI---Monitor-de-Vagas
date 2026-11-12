@@ -1,6 +1,6 @@
 import { Animated, Pressable, StyleSheet, Text } from 'react-native';
 
-import { CaixaGradiente, type Cores } from '@/components/CaixaGradiente';
+import { CaixaGradiente, type Cores } from '@/components/base/CaixaGradiente';
 import { useDestaque } from '@/hooks/useDestaque';
 import { cores, espaco, fontes, gradientes, raio, tipografia } from '@/theme';
 

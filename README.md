@@ -153,7 +153,7 @@ Escaneie o QR code exibido no terminal com o Expo Go (Android) ou com a câmera 
 - `src/`: backend Node.js, TypeScript e Express.
 - `Frontend/`: app Expo (React Native e TypeScript) com a interface definitiva.
   - `Frontend/src/app/`: telas do app; cada arquivo é uma rota do Expo Router.
-  - `Frontend/src/components/`: componentes do design system.
+  - `Frontend/src/components/`: componentes do design system, separados por função em `base/`, `botoes/`, `campos/`, `cartoes/`, `navegacao/` e `telas/`.
   - `Frontend/src/dados/`: dados provisórios dos parceiros e o último local visitado.
   - `Frontend/src/theme.ts`: cores, fontes, espaçamentos e tipografia vindos do Figma.
 - `Frontend/editor.html`: editor provisório para testar os polígonos.

@@ -2,10 +2,11 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { BotaoIcone } from '@/components/BotaoIcone';
-import { CartaoLocalParceiro } from '@/components/CartaoLocalParceiro';
-import { DialogoConfirmacao } from '@/components/DialogoConfirmacao';
-import { TelaParceiro } from '@/components/TelaParceiro';
+import { BotaoCircular } from '@/components/botoes/BotaoCircular';
+import { BotaoIcone } from '@/components/botoes/BotaoIcone';
+import { CartaoLocalParceiro } from '@/components/cartoes/CartaoLocalParceiro';
+import { DialogoConfirmacao } from '@/components/base/DialogoConfirmacao';
+import { TelaParceiro } from '@/components/telas/TelaParceiro';
 import { removerLocal, useLocaisParceiro, type LocalParceiro } from '@/dados/areaParceiro';
 import { useTelaPequena } from '@/hooks/useTelaPequena';
 import { rotaDoLocalParceiro } from '@/rotas';
@@ -18,6 +19,8 @@ export default function TelaLocaisParceiro() {
   // Local aguardando confirmação no pop-up
   const [excluindo, setExcluindo] = useState<LocalParceiro | null>(null);
 
+  const novoLocal = () => router.push('/area-parceiro/locais/novo');
+
   function confirmarExclusao() {
     if (excluindo) removerLocal(excluindo.id);
     setExcluindo(null);
@@ -29,14 +32,15 @@ export default function TelaLocaisParceiro() {
       tituloAba="Seus locais"
       titulo="Seus locais"
       subtitulo="Adicione, edite ou remova."
-      acao={
-        <BotaoIcone titulo="Novo local" icone="plus" onPress={() => router.push('/area-parceiro/locais/novo')} />
-      }
+      // No celular o "Novo local" vira o botão circular "+" do Figma
+      acao={!telaPequena && <BotaoIcone titulo="Novo local" icone="plus" onPress={novoLocal} />}
+      acaoFlutuante={<BotaoCircular icone="plus" rotulo="Novo local" onPress={novoLocal} />}
+      espacoTitulo={38}
     >
       {locais.length > 0 ? (
-        <View style={styles.grade}>
+        <View style={telaPequena ? celular.lista : styles.grade}>
           {locais.map((local) => (
-            <View key={local.id} style={[styles.celula, !telaPequena && styles.celulaDesktop]}>
+            <View key={local.id} style={telaPequena ? undefined : [styles.celula, styles.celulaDesktop]}>
               <CartaoLocalParceiro
                 nome={local.nome}
                 endereco={local.endereco}
@@ -48,7 +52,9 @@ export default function TelaLocaisParceiro() {
           ))}
         </View>
       ) : (
-        <Text style={styles.vazio}>{'Nenhum local cadastrado. Clique em "Novo local" para começar.'}</Text>
+        <Text style={styles.vazio}>
+          {`Nenhum local cadastrado. Clique em "${telaPequena ? '+' : 'Novo local'}" para começar.`}
+        </Text>
       )}
 
       <DialogoConfirmacao
@@ -79,5 +85,12 @@ const styles = StyleSheet.create({
   vazio: {
     ...tipografia.corpo,
     color: cores.textoSuave,
+  },
+});
+
+const celular = StyleSheet.create({
+  // Figma: 12px entre os cartões
+  lista: {
+    gap: espaco[3],
   },
 });

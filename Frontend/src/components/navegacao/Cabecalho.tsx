@@ -1,11 +1,14 @@
 import { Link, router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Botao } from '@/components/Botao';
-import { Logo } from '@/components/Logo';
-import { NavegacaoParceiro, type SecaoParceiro } from '@/components/NavegacaoParceiro';
-import { cores, espaco, LARGURA_CONTEUDO, tipografia } from '@/theme';
+import { Botao } from '@/components/botoes/Botao';
+import { Logo } from '@/components/base/Logo';
+import { NavegacaoParceiro, type SecaoParceiro } from '@/components/navegacao/NavegacaoParceiro';
+import { cores, espaco, LARGURA_CONTEUDO } from '@/theme';
+
+// Logo horizontal com a altura da barra (40px de conteúdo + 16px de padding em cima e embaixo)
+const ALTURA_LOGO = 72;
 
 type Props = {
   mostrarAcoesParceiro?: boolean;
@@ -22,9 +25,8 @@ export function Cabecalho({ mostrarAcoesParceiro = false, secaoParceiro }: Props
     <View style={[styles.barra, { paddingTop: top }]}>
       <View style={styles.conteudo}>
         <Link href="/" asChild>
-          <Pressable style={styles.marca} accessibilityRole="link">
-            <Logo tamanho={40} />
-            <Text style={styles.nome}>Vagas Maua</Text>
+          <Pressable style={styles.marca} accessibilityRole="link" accessibilityLabel="Vaga Livre, início">
+            <Logo variante="horizontal" tamanho={ALTURA_LOGO} />
           </Pressable>
         </Link>
 
@@ -62,14 +64,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  // O componente do Figma tem respiro interno; a margem negativa usa esse respiro como o padding da
+  // barra, que mantém a altura que tinha com o placeholder de 40px
   marca: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: espaco[3],
-  },
-  nome: {
-    ...tipografia.h6,
-    color: cores.primaria,
+    marginVertical: -espaco[4],
   },
   acoes: {
     flexDirection: 'row',

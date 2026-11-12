@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 
-import { CartaoLocal } from '@/components/CartaoLocal';
-import { TelaLista } from '@/components/TelaLista';
+import { CartaoLocal } from '@/components/cartoes/CartaoLocal';
+import { TelaLista } from '@/components/telas/TelaLista';
 import { ocupacaoDoParceiro, parceiros, type Parceiro } from '@/dados/parceiros';
 import { rotaDoParceiro } from '@/rotas';
 

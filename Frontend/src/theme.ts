@@ -38,6 +38,19 @@ export const paleta = {
     800: "#0a2f5e",
     900: "#082448",
   },
+  // Está no Design System do Figma, mas nenhuma tela usa ainda
+  purple: {
+    50: "#f4f0ff",
+    100: "#ddcffe",
+    200: "#cdb8fe",
+    300: "#b697fd",
+    400: "#a883fd",
+    500: "#9264fc",
+    600: "#855be5",
+    700: "#6847b3",
+    800: "#50378b",
+    900: "#3d2a6a",
+  },
   green: {
     50: "#eafcf0",
     100: "#bdf5d0",
@@ -78,7 +91,11 @@ export const paleta = {
 
 // Cada peso é um arquivo de fonte separado. Para usar outro, adicione aqui e carregue em app/_layout.tsx.
 export const fontes = {
-  montserrat: { regular: "Montserrat_400Regular", negrito: "Montserrat_700Bold" },
+  montserrat: {
+    regular: "Montserrat_400Regular",
+    seminegrito: "Montserrat_600SemiBold",
+    negrito: "Montserrat_700Bold",
+  },
   inter: {
     regular: "Inter_400Regular",
     medio: "Inter_500Medium",
@@ -147,8 +164,14 @@ export const cores = {
   secundaria: paleta.blue[300],
   inativo: paleta.black[100],
   perigo: paleta.red[500],
-  perigoSuave: paleta.red[300],
-  logo: paleta.white[600],
+  // "Sair" da barra inferior nas telas do Figma
+  perigoSuave: paleta.red[200],
+  // Componentes "Logo/Vaga Livre": símbolo em blue-500 e nome em black-500
+  logoSimbolo: paleta.blue[500],
+  logoNome: paleta.black[500],
+  // Barra de rolagem das listas com altura fixa (Figma: trilho 4px e indicador 6px)
+  trilhoRolagem: paleta.white[600],
+  indicadorRolagem: paleta.white[700],
 };
 
 // Cores de cima para baixo
@@ -167,6 +190,10 @@ export const gradientes = {
   },
   // Cartões e campos
   neutro: { borda: [paleta.white[500], paleta.white[600]] },
+  // Input, Search, Select e linha de Bloco do Figma (um tom mais claro no topo que o dos cartões)
+  campo: { borda: [paleta.white[400], paleta.white[600]] },
+  // Interruptor desligado
+  inativo: { borda: [paleta.black[100], paleta.white[700]] },
   foco: { borda: [paleta.blue[200], paleta.blue[400]] },
   // Card de dados (Dashboard)
   destaque: { borda: [paleta.blue[100], paleta.blue[400]] },
@@ -180,24 +207,42 @@ export const ocupacao = {
     borda: [paleta.green[300], paleta.green[900]],
     texto: paleta.green[900],
     barra: paleta.green[600],
+    // Barra do gráfico "Ocupação por bloco" (tela Dados)
+    grafico: paleta.green[500],
   },
   moderado: {
     fundo: [paleta.yellow[600], paleta.yellow[400]],
     borda: [paleta.yellow[200], paleta.yellow[900]],
     texto: paleta.yellow[900],
     barra: paleta.yellow[600],
+    grafico: paleta.yellow[500],
   },
   cheio: {
     fundo: [paleta.red[300], paleta.red[300]],
     borda: [paleta.red[200], paleta.red[900]],
     texto: paleta.red[900],
     barra: paleta.red[600],
+    grafico: paleta.red[500],
   },
 } as const;
 
 export const raio = { cartao: 15, pilula: 999 };
 
 export const sombras = { foco: "0px 2px 4px rgba(97, 142, 199, 0.35)" };
+
+// Gráficos da tela "Dados" do Figma. Fora da paleta, mas são os valores exatos do Figma:
+// textos dos eixos #000000 a 70%, grade #00001a a 15% e linha do zero #00001a a 30%
+export const grafico = {
+  eixo: "rgba(0, 0, 0, 0.7)",
+  grade: "rgba(0, 0, 26, 0.15)",
+  gradeBase: "rgba(0, 0, 26, 0.3)",
+  // Linha "Ocupação por horário": traço blue-500 e área de blue-500 a 50% até blue-100 a 15%
+  linha: paleta.blue[500],
+  area: [
+    { cor: paleta.blue[500], opacidade: 0.5 },
+    { cor: paleta.blue[100], opacidade: 0.15 },
+  ],
+};
 
 // Transições de hover/pressionado/liga-desliga (ms)
 export const animacao = { duracao: 200 };

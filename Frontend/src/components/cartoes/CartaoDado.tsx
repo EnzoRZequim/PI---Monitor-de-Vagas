@@ -1,6 +1,7 @@
 import { StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
 
-import { CaixaGradiente } from '@/components/CaixaGradiente';
+import { CaixaGradiente } from '@/components/base/CaixaGradiente';
+import { useTelaPequena } from '@/hooks/useTelaPequena';
 import { cores, espaco, fontes, gradientes, raio, tipografia } from '@/theme';
 
 type Props = {
@@ -14,15 +15,18 @@ type Props = {
 
 // Cartão de número do painel do parceiro ("Dashboard" no Figma)
 export function CartaoDado({ titulo, valor, legenda, style }: Props) {
+  const telaPequena = useTelaPequena();
+
   return (
     <CaixaGradiente
       borda={gradientes.destaque.borda}
       fundo={cores.superficie}
       raio={raio.cartao}
-      style={[styles.cartao, style]}
+      style={[styles.cartao, telaPequena && styles.cartaoCelular, style]}
       estiloConteudo={styles.conteudo}
     >
-      <Text style={[styles.negrito, { color: cores.primariaClara }]} numberOfLines={1}>
+      {/* No celular o título quebra em até duas linhas, como no Figma */}
+      <Text style={[styles.negrito, { color: cores.primariaClara }]} numberOfLines={telaPequena ? 2 : 1}>
         {titulo}
       </Text>
       <Text style={[styles.negrito, { color: cores.textoSecundario }]} numberOfLines={1}>
@@ -40,6 +44,9 @@ export function CartaoDado({ titulo, valor, legenda, style }: Props) {
 const styles = StyleSheet.create({
   cartao: {
     width: 145,
+  },
+  cartaoCelular: {
+    minHeight: 118,
   },
   conteudo: {
     // Preenche a caixa quando a linha estica o cartão (ex.: vizinho com legenda e este sem); sem

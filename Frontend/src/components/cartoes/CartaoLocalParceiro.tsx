@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { CartaoDetalhes } from '@/components/CartaoDetalhes';
+import { CartaoDetalhes } from '@/components/cartoes/CartaoDetalhes';
 import { cores, espaco } from '@/theme';
 
 type Props = {

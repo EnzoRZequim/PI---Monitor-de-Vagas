@@ -1,8 +1,8 @@
 import { router, Stack } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { BotaoIcone } from '@/components/BotaoIcone';
-import { Cabecalho } from '@/components/Cabecalho';
+import { BotaoIcone } from '@/components/botoes/BotaoIcone';
+import { Cabecalho } from '@/components/navegacao/Cabecalho';
 import { useTelaPequena } from '@/hooks/useTelaPequena';
 import { cores, espaco, tipografia } from '@/theme';
 
@@ -12,7 +12,7 @@ export function LocalNaoEncontrado() {
 
   return (
     <View style={styles.tela}>
-      <Stack.Screen options={{ title: 'Local não encontrado | Vagas Maua' }} />
+      <Stack.Screen options={{ title: 'Local não encontrado | Vaga Livre' }} />
       {!telaPequena && <Cabecalho />}
       <View style={styles.conteudo}>
         <Text style={styles.titulo}>Local não encontrado</Text>

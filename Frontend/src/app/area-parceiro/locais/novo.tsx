@@ -1,4 +1,4 @@
-import { FormularioLocal } from '@/components/FormularioLocal';
+import { FormularioLocal } from '@/components/telas/FormularioLocal';
 
 export default function TelaNovoLocal() {
   return <FormularioLocal />;

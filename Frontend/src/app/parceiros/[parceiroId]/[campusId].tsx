@@ -1,12 +1,15 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect } from 'react';
 
-import { CartaoLocal } from '@/components/CartaoLocal';
-import { LocalNaoEncontrado } from '@/components/LocalNaoEncontrado';
-import { TelaLista } from '@/components/TelaLista';
+import { CartaoLocal } from '@/components/cartoes/CartaoLocal';
+import { LocalNaoEncontrado } from '@/components/telas/LocalNaoEncontrado';
+import { TelaLista } from '@/components/telas/TelaLista';
 import { buscarCampus, buscarParceiro, type Bloco } from '@/dados/parceiros';
 import { salvarUltimoLocal } from '@/dados/ultimoLocal';
 import { rotaDoParceiro } from '@/rotas';
+
+// Valores do Figma (celular): lista de 320px que rola, 19px entre os cartões e 8px até a barra
+const LISTA_BLOCOS = { alturaMaxima: 320, espacoItens: 19, espacoBarra: 8 };
 
 const chave = (b: Bloco) => b.id;
 const textoBusca = (b: Bloco) => b.nome;
@@ -26,6 +29,9 @@ export default function TelaBlocos() {
   return (
     <TelaLista
       titulo={campus.nome}
+      // No celular o título fica à esquerda, como no Figma
+      tituloEsquerda
+      listaRolavel={LISTA_BLOCOS}
       placeholderBusca="Buscar bloco"
       itens={campus.blocos}
       chave={chave}

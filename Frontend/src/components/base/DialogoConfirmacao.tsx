@@ -1,8 +1,8 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Botao } from '@/components/Botao';
-import { BotaoIcone } from '@/components/BotaoIcone';
-import { CaixaGradiente } from '@/components/CaixaGradiente';
+import { Botao } from '@/components/botoes/Botao';
+import { BotaoIcone } from '@/components/botoes/BotaoIcone';
+import { CaixaGradiente } from '@/components/base/CaixaGradiente';
 import { cores, espaco, gradientes, raio, tipografia } from '@/theme';
 
 type Props = {

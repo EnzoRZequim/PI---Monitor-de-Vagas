@@ -3,9 +3,9 @@ import { useRef } from 'react';
 import { KeyboardAvoidingView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BotaoIcone } from '@/components/BotaoIcone';
-import { Cabecalho } from '@/components/Cabecalho';
-import { CampoTexto } from '@/components/CampoTexto';
+import { BotaoIcone } from '@/components/botoes/BotaoIcone';
+import { Cabecalho } from '@/components/navegacao/Cabecalho';
+import { CampoTexto } from '@/components/campos/CampoTexto';
 import { useTelaPequena } from '@/hooks/useTelaPequena';
 import { voltar } from '@/rotas';
 import { cores, espaco, fontes, tamanhoFonte, tipografia } from '@/theme';
@@ -21,7 +21,7 @@ export default function TelaLogin() {
 
   return (
     <View style={styles.tela}>
-      <Stack.Screen options={{ title: 'Área do parceiro | Vagas Maua' }} />
+      <Stack.Screen options={{ title: 'Área do parceiro | Vaga Livre' }} />
       {!telaPequena && <Cabecalho />}
 
       {/* Empurra o formulário para cima quando o teclado abre, deixando os botões à vista */}
@@ -32,18 +32,19 @@ export default function TelaLogin() {
             styles.rolagem,
             telaPequena && {
               paddingHorizontal: espaco[4],
-              paddingTop: insets.top + espaco[8],
-              paddingBottom: insets.bottom + espaco[8],
+              // Figma: 16px em volta do conteúdo centralizado
+              paddingTop: insets.top + espaco[4],
+              paddingBottom: insets.bottom + espaco[4],
             },
           ]}
         >
           <View style={styles.formulario}>
-            <View style={styles.textos}>
+            <View style={[styles.textos, telaPequena && celular.textos]}>
               <Text style={[styles.titulo, telaPequena && styles.tituloCelular]}>Área do parceiro</Text>
               <Text style={styles.subtitulo}>Seu estacionamento, suas vagas.</Text>
             </View>
 
-            <View style={styles.campos}>
+            <View style={[styles.campos, telaPequena && celular.campos]}>
               <CampoTexto
                 placeholder="Login..."
                 accessibilityLabel="Login"
@@ -69,9 +70,9 @@ export default function TelaLogin() {
             </View>
 
             {/* Sem ação até o backend ter recuperação de senha */}
-            <Text style={styles.esqueciSenha}>Esqueci a senha</Text>
+            <Text style={[styles.esqueciSenha, telaPequena && celular.esqueciSenha]}>Esqueci a senha</Text>
 
-            <View style={styles.botoes}>
+            <View style={[styles.botoes, telaPequena && celular.botoes]}>
               <BotaoIcone tipo="secundario" titulo="Voltar" icone="rotate-ccw" onPress={() => voltar('/')} />
               {/* Sem autenticação no backend ainda: entra direto na área do parceiro */}
               <BotaoIcone titulo="Enviar" icone="send" onPress={() => router.replace('/area-parceiro')} />
@@ -133,5 +134,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+});
+
+// Valores do Figma ("Área do parceiro", 393px)
+const celular = StyleSheet.create({
+  textos: {
+    gap: espaco[4],
+  },
+  campos: {
+    gap: espaco[4],
+  },
+  esqueciSenha: {
+    marginTop: 10,
+  },
+  botoes: {
+    marginTop: 42,
   },
 });

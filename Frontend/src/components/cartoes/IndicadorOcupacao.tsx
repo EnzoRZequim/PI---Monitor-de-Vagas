@@ -1,6 +1,6 @@
 import { StyleSheet, Text } from 'react-native';
 
-import { CaixaGradiente } from '@/components/CaixaGradiente';
+import { CaixaGradiente } from '@/components/base/CaixaGradiente';
 import { espaco, fontes, ocupacao, raio, tipografia } from '@/theme';
 
 export function taxaDeOcupacao(ocupadas: number, total: number) {

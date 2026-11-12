@@ -3,20 +3,25 @@ import { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BotaoIcone } from '@/components/BotaoIcone';
-import { AcoesParceiro, Cabecalho } from '@/components/Cabecalho';
-import { Logo } from '@/components/Logo';
+import { BotaoIcone } from '@/components/botoes/BotaoIcone';
+import { AcoesParceiro, Cabecalho } from '@/components/navegacao/Cabecalho';
+import { Logo } from '@/components/base/Logo';
 import { buscarCampus, buscarParceiro, type Campus } from '@/dados/parceiros';
 import { lerUltimoLocal } from '@/dados/ultimoLocal';
 import { useTelaPequena } from '@/hooks/useTelaPequena';
 import { rotaDoCampus } from '@/rotas';
-import { cores, espaco, fontes, LARGURA_CONTEUDO, larguras, tipografia } from '@/theme';
+import { cores, espaco, fontes, LARGURA_CONTEUDO, tipografia } from '@/theme';
 
 type UltimoVisitado = { parceiroId: string; campus: Campus };
 
 const DESCRICAO =
   'Aqui você tem acesso ao mapa do estacionamento de todos os nossos parceiros! Evite filas ' +
   'desnecessárias, voltas pelo estacionamento e atraso nos compromissos.';
+
+// Texto da tela inicial do Figma (celular)
+const DESCRICAO_CELULAR =
+  'Em nosso aplicativo, você tem acesso ao mapa do estacionamento de todos os nossos parceiros! ' +
+  'Evite filas desnecessárias, voltas pelo estacionamento, e atraso nos compromissos.';
 
 export default function TelaInicial() {
   const [ultimo, setUltimo] = useState<UltimoVisitado | null>(null);
@@ -43,7 +48,10 @@ export default function TelaInicial() {
   const ultimoLocal = ultimo && (
     <View style={[styles.ultimoLocal, telaPequena && celular.centralizado]}>
       <Text style={[styles.ultimoLocalRotulo, telaPequena && celular.ultimoLocalRotulo]}>Último local visitado:</Text>
-      <Link href={rotaDoCampus(ultimo.parceiroId, ultimo.campus.id)} style={styles.ultimoLocalLink}>
+      <Link
+        href={rotaDoCampus(ultimo.parceiroId, ultimo.campus.id)}
+        style={[styles.ultimoLocalLink, telaPequena && celular.ultimoLocalLink]}
+      >
         {ultimo.campus.nome}
       </Link>
     </View>
@@ -56,13 +64,15 @@ export default function TelaInicial() {
         <ScrollView
           contentContainerStyle={[
             celular.rolagem,
-            { paddingTop: insets.top + espaco[8], paddingBottom: insets.bottom + espaco[8] },
+            { paddingTop: insets.top + espaco[16], paddingBottom: insets.bottom + espaco[16] },
           ]}
         >
-          <View style={celular.centralizado}>
-            <Logo tamanho={100} />
-            <Text style={celular.titulo}>Vagas Maua</Text>
-            <Text style={celular.descricao}>{DESCRICAO}</Text>
+          <View style={[celular.centralizado, celular.apresentacao]}>
+            <View style={[celular.centralizado, celular.marca]}>
+              <Logo tamanho={100} />
+              <Text style={celular.titulo}>Vaga Livre</Text>
+            </View>
+            <Text style={celular.descricao}>{DESCRICAO_CELULAR}</Text>
           </View>
 
           <View style={[celular.centralizado, celular.acao]}>
@@ -85,7 +95,7 @@ export default function TelaInicial() {
           <Logo tamanho={260} />
 
           <View style={styles.texto}>
-            <Text style={styles.titulo}>Vagas Maua</Text>
+            <Text style={styles.titulo}>Vaga Livre</Text>
             <Text style={styles.descricao}>{DESCRICAO}</Text>
 
             <View style={styles.acao}>
@@ -166,18 +176,28 @@ const celular = StyleSheet.create({
   centralizado: {
     alignItems: 'center',
   },
+  // Valores do Figma ("Início", 393px)
+  apresentacao: {
+    gap: espaco[4],
+    paddingHorizontal: espaco[4],
+  },
+  marca: {
+    gap: espaco[3],
+  },
   titulo: {
     ...tipografia.h5,
+    fontFamily: fontes.montserrat.seminegrito,
     color: cores.primaria,
-    marginTop: espaco[3],
-    marginBottom: espaco[3],
   },
   descricao: {
     ...tipografia.corpo,
-    lineHeight: 20,
-    maxWidth: larguras.padrao,
+    // Altura de linha 100% do Figma
+    lineHeight: tipografia.corpo.fontSize,
     color: cores.textoSuave,
     textAlign: 'center',
+  },
+  ultimoLocalLink: {
+    fontFamily: fontes.inter.medio,
   },
   acao: {
     gap: espaco[4],
