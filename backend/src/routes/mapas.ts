@@ -1,32 +1,67 @@
-import { mkdir, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Router } from "express";
 import multer = require("multer");
 import sharp = require("sharp");
 import { z } from "zod";
-import { badRequest, conflict, created, internalError, notFound, ok, sendResponse, updated } from "../common/ResponseHelper";
+import {
+  badRequest,
+  conflict,
+  created,
+  internalError,
+  notFound,
+  ok,
+  sendResponse,
+  updated
+} from "../common/ResponseHelper";
 import { IMAGES_DIR } from "../config/paths";
-import { buscarMapa, criarMapa, listarMapas, salvarMapa } from "../services/MapaStorage";
+import { sugerirVaga } from "../services/SamVagas";
+import { detectarVagas } from "../services/DetectorVagasSeg";
+import {
+  buscarMapa,
+  criarMapa,
+  listarMapas,
+  salvarMapa
+} from "../services/MapaStorage";
 import { separarVagas } from "../services/SeparadorVaga";
 import type { Mapa } from "../types/Mapa";
 import type { OcupacaoMapa } from "../types/Ocupacao";
 
 const router = Router();
 const formatoID = /^[a-zA-Z0-9-]+$/;
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024, files: 1, fields: 2 }
 });
+
 const formatoVagas = z.object({
-  Vagas: z.array(z.object({
-    ID: z.string().min(1),
-    Nome: z.string().min(1),
-    Pontos: z.array(z.object({
-      X: z.number().min(0).max(1),
-      Y: z.number().min(0).max(1)
-    })).length(4, "Cada vaga deve ter exatamente 4 pontos.")
-  })).refine(vagas => new Set(vagas.map(vaga => vaga.ID)).size === vagas.length, "Os IDs das vagas devem ser únicos.")
+  Vagas: z
+    .array(
+      z.object({
+        ID: z.string().min(1),
+        Nome: z.string().min(1),
+        Pontos: z
+          .array(
+            z.object({
+              X: z.number().min(0).max(1),
+              Y: z.number().min(0).max(1)
+            })
+          )
+          .length(4, "Cada vaga deve ter exatamente 4 pontos.")
+      })
+    )
+    .refine(
+      (vagas) => new Set(vagas.map((vaga) => vaga.ID)).size === vagas.length,
+      "Os IDs das vagas devem ser únicos."
+    )
 });
+
+const formatoSugestao = z.object({
+  X: z.number().min(0).max(1),
+  Y: z.number().min(0).max(1)
+});
+
 const TOLERANCIA_PROPORCAO = 0.05;
 
 router.post("/", upload.single("Imagem"), async (req, res) => {
@@ -40,7 +75,9 @@ router.post("/", upload.single("Imagem"), async (req, res) => {
     return sendResponse(res, badRequest("Nome é obrigatório."));
   }
 
-  if (!req.file) return sendResponse(res, badRequest("Envie uma imagem no campo Imagem."));
+  if (!req.file) {
+    return sendResponse(res, badRequest("Envie uma imagem no campo Imagem."));
+  }
 
   let Largura: number;
   let Altura: number;
@@ -66,7 +103,15 @@ router.post("/", upload.single("Imagem"), async (req, res) => {
 
   const Imagem = `${ID}.${extensao}`;
   const caminhoImagem = path.join(IMAGES_DIR, Imagem);
-  const mapa: Mapa = { ID, Nome: Nome.trim(), Imagem, Largura, Altura, Vagas: [] };
+  const mapa: Mapa = {
+    ID,
+    Nome: Nome.trim(),
+    Imagem,
+    Largura,
+    Altura,
+    Vagas: []
+  };
+
   let imagemCriada = false;
 
   try {
@@ -83,7 +128,10 @@ router.post("/", upload.single("Imagem"), async (req, res) => {
 
     return sendResponse(res, created("Mapa criado com sucesso.", mapa));
   } catch (erro) {
-    if (imagemCriada) await unlink(caminhoImagem).catch(() => {});
+    if (imagemCriada) {
+      await unlink(caminhoImagem).catch(() => { });
+    }
+
     if ((erro as NodeJS.ErrnoException).code === "EEXIST") {
       return sendResponse(res, conflict("Já existe uma imagem com esse ID."));
     }
@@ -105,13 +153,18 @@ router.get("/", async (_req, res) => {
 
 router.get("/:ID", async (req, res) => {
   const ID = req.params.ID;
+
   if (typeof ID !== "string" || !ID || !formatoID.test(ID)) {
     return sendResponse(res, badRequest("ID inválido. Use letras, números e hífens."));
   }
 
   try {
     const mapa = await buscarMapa(ID);
-    if (!mapa) return sendResponse(res, notFound("Mapa não encontrado."));
+
+    if (!mapa) {
+      return sendResponse(res, notFound("Mapa não encontrado."));
+    }
+
     return sendResponse(res, ok("Mapa encontrado.", mapa));
   } catch (erro) {
     console.error("Erro ao buscar mapa:", erro);
@@ -119,22 +172,112 @@ router.get("/:ID", async (req, res) => {
   }
 });
 
+router.get("/:ID/detectar-vagas", async (req, res) => {
+  const ID = req.params.ID;
+
+  if (typeof ID !== "string" || !ID || !formatoID.test(ID)) {
+    return sendResponse(res, badRequest("ID inválido. Use letras, números e hífens."));
+  }
+
+  try {
+    const mapa = await buscarMapa(ID);
+
+    if (!mapa) {
+      return sendResponse(res, notFound("Mapa não encontrado."));
+    }
+
+    const caminhoImagem = path.join(IMAGES_DIR, mapa.Imagem);
+    const imagem = await readFile(caminhoImagem);
+
+    const vagasDetectadas = await detectarVagas(imagem);
+
+    return sendResponse(
+      res,
+      ok("Vagas detectadas com sucesso.", {
+        Quantidade: vagasDetectadas.length,
+        Vagas: vagasDetectadas
+      })
+    );
+  } catch (erro) {
+    console.error("Erro ao detectar vagas:", erro);
+    return sendResponse(res, internalError());
+  }
+});
+
+router.post("/:ID/sugerir-vaga", async (req, res) => {
+  const ID = req.params.ID;
+
+  if (typeof ID !== "string" || !ID || !formatoID.test(ID)) {
+    return sendResponse(res, badRequest("ID inválido. Use letras, números e hífens."));
+  }
+
+  const resultado = formatoSugestao.safeParse(req.body);
+
+  if (!resultado.success) {
+    return sendResponse(res, badRequest("Informe X e Y entre 0 e 1."));
+  }
+
+  try {
+    const mapa = await buscarMapa(ID);
+
+    if (!mapa) {
+      return sendResponse(res, notFound("Mapa não encontrado."));
+    }
+
+    const caminhoImagem = path.join(IMAGES_DIR, mapa.Imagem);
+    const imagem = await readFile(caminhoImagem);
+    const tipoImagem = mapa.Imagem.toLowerCase().endsWith(".png")
+      ? "image/png"
+      : "image/jpeg";
+
+    const pontos = await sugerirVaga(
+      imagem,
+      resultado.data,
+      tipoImagem
+    );
+
+    return sendResponse(
+      res,
+      ok("Vaga sugerida com sucesso.", { Pontos: pontos })
+    );
+  } catch (erro) {
+    console.error("Erro ao sugerir vaga:", erro);
+    return sendResponse(res, internalError());
+  }
+});
+
 router.put("/:ID/vagas", async (req, res) => {
   const ID = req.params.ID;
+
   if (typeof ID !== "string" || !ID || !formatoID.test(ID)) {
     return sendResponse(res, badRequest("ID inválido. Use letras, números e hífens."));
   }
 
   const resultado = formatoVagas.safeParse(req.body);
-  if (!resultado.success) return sendResponse(res, badRequest("Vagas inválidas: informe IDs únicos e exatamente 4 pontos por vaga, com X e Y entre 0 e 1."));
+
+  if (!resultado.success) {
+    return sendResponse(
+      res,
+      badRequest(
+        "Vagas inválidas: informe IDs únicos e exatamente 4 pontos por vaga, com X e Y entre 0 e 1."
+      )
+    );
+  }
 
   try {
     const mapa = await buscarMapa(ID);
-    if (!mapa) return sendResponse(res, notFound("Mapa não encontrado."));
+
+    if (!mapa) {
+      return sendResponse(res, notFound("Mapa não encontrado."));
+    }
 
     mapa.Vagas = resultado.data.Vagas;
     await salvarMapa(mapa);
-    return sendResponse(res, updated("Vagas atualizadas com sucesso.", mapa));
+
+    return sendResponse(
+      res,
+      updated("Vagas atualizadas com sucesso.", mapa)
+    );
   } catch (erro) {
     console.error("Erro ao salvar vagas:", erro);
     return sendResponse(res, internalError());
@@ -143,17 +286,24 @@ router.put("/:ID/vagas", async (req, res) => {
 
 router.post("/:ID/analisar", upload.single("Imagem"), async (req, res) => {
   const ID = req.params.ID;
+
   if (typeof ID !== "string" || !ID || !formatoID.test(ID)) {
     return sendResponse(res, badRequest("ID inválido. Use letras, números e hífens."));
   }
 
-  if (!req.file) return sendResponse(res, badRequest("Envie uma imagem no campo Imagem."));
+  if (!req.file) {
+    return sendResponse(res, badRequest("Envie uma imagem no campo Imagem."));
+  }
 
   try {
     const mapa = await buscarMapa(ID);
-    if (!mapa) return sendResponse(res, notFound("Mapa não encontrado."));
+
+    if (!mapa) {
+      return sendResponse(res, notFound("Mapa não encontrado."));
+    }
 
     const metadados = await sharp(req.file.buffer).metadata();
+
     if (metadados.format !== "jpeg" && metadados.format !== "png") {
       return sendResponse(res, badRequest("A imagem deve ser JPG ou PNG."));
     }
@@ -165,11 +315,22 @@ router.post("/:ID/analisar", upload.single("Imagem"), async (req, res) => {
     const proporcaoMapa = mapa.Largura / mapa.Altura;
     const proporcaoImagem = metadados.width / metadados.height;
 
-    if (Math.abs(proporcaoMapa - proporcaoImagem) / proporcaoMapa > TOLERANCIA_PROPORCAO) {
-      return sendResponse(res, badRequest("A proporção da imagem não corresponde à do mapa. Use uma imagem da mesma câmera/ângulo."));
+    if (
+      Math.abs(proporcaoMapa - proporcaoImagem) / proporcaoMapa >
+      TOLERANCIA_PROPORCAO
+    ) {
+      return sendResponse(
+        res,
+        badRequest(
+          "A proporção da imagem não corresponde à do mapa. Use uma imagem da mesma câmera/ângulo."
+        )
+      );
     }
 
-    const ocupacao: OcupacaoMapa = await separarVagas(req.file.buffer, mapa);
+    const ocupacao: OcupacaoMapa = await separarVagas(
+      req.file.buffer,
+      mapa
+    );
 
     return sendResponse(res, ok("Análise concluída.", ocupacao));
   } catch (erro) {
@@ -178,4 +339,4 @@ router.post("/:ID/analisar", upload.single("Imagem"), async (req, res) => {
   }
 });
 
-export default router;
+export default router;  

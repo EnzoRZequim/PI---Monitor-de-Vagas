@@ -1,4 +1,12 @@
-import type { Mapa, OcupacaoMapa, RespostaApi, ResumoMapa, Vaga } from "./tipos";
+import type {
+  Mapa,
+  OcupacaoMapa,
+  Ponto,
+  RespostaApi,
+  ResumoMapa,
+  SugestaoVaga,
+  Vaga
+} from "./tipos";
 
 async function requisitar<T>(url: string, init?: RequestInit): Promise<T> {
   const resposta = await fetch(url, init);
@@ -26,21 +34,43 @@ export const salvarVagas = (id: string, vagas: Vaga[]) =>
     body: JSON.stringify({ Vagas: vagas })
   });
 
+export const sugerirVaga = (id: string, ponto: Ponto) =>
+  requisitar<SugestaoVaga>(
+    `/mapas/${encodeURIComponent(id)}/sugerir-vaga`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ X: ponto.X, Y: ponto.Y })
+    }
+  );
+
+export const detectarVagas = (id: string) =>
+  requisitar<{
+    Quantidade: number;
+    Vagas: {
+      Pontos: Ponto[];
+    }[];
+  }>(`/mapas/${encodeURIComponent(id)}/detectar-vagas`);
+
 export const analisarMapa = (id: string, imagem: File) => {
   const dados = new FormData();
   dados.append("Imagem", imagem);
 
-  return requisitar<OcupacaoMapa>(`/mapas/${encodeURIComponent(id)}/analisar`, {
-    method: "POST",
-    body: dados
-  });
+  return requisitar<OcupacaoMapa>(
+    `/mapas/${encodeURIComponent(id)}/analisar`,
+    {
+      method: "POST",
+      body: dados
+    }
+  );
 };
 
 export const iniciarMonitoramento = (dados: FormData) => {
-  return requisitar<{ sessionId: string; status: string; mensagem: string }>(
-    "/monitorar",
-    { method: "POST", body: dados }
-  );
+  return requisitar<{
+    sessionId: string;
+    status: string;
+    mensagem: string;
+  }>("/monitorar", { method: "POST", body: dados });
 };
 
 export const pararMonitoramento = (sessionId: string) => {

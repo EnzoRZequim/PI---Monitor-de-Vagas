@@ -68,3 +68,7 @@ export type MonitorStatusInfo = {
   tipo: 'erro';
   mensagem: string;
 };
+
+export type SugestaoVaga = {
+  Pontos: Ponto[];
+};
