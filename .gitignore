@@ -32,6 +32,9 @@ graphify-out/
 # Dados de treino (pasta existe localmente, mas conteúdo não sobe ao Git)
 treino/dados/
 
+# Resultados de treino e validação (imagens, curvas, matriz de confusão, predictions.json)
+treino/Mapeador/runs/
+
 # Ambientes virtuais Python (raiz e subpastas)
 .venv/
 **/.venv/
