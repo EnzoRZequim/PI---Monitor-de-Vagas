@@ -33,13 +33,21 @@ PI---Monitor-de-Vagas/
 │     ├─ main.tsx
 │     └─ tipos.ts
 ├─ scripts/
+├─ treino/
+│  ├─ Classificador/
+│  ├─ Mapeador/
+│  ├─ dados/
+│  └─ ia_mapa/
 ├─ node_modules/
 ├─ dist/
+├─ .gitattributes
 ├─ .gitignore
 ├─ package.json
 ├─ package-lock.json
 ├─ README.md
-└─ tsconfig.json
+├─ requirements.txt
+├─ tsconfig.json
+└─ .venv/
 ```
 
 ## Pastas principais
@@ -142,6 +150,24 @@ Durante `npm run dev`, sobe em `http://localhost:5173`. `node_modules/` e `dist/
 
 Scripts auxiliares. Possui `dev-all.js` (inicia backend e frontend juntos via `npm run dev:all`).
 
+### `treino/`
+
+Scripts e recursos de treinamento e inferência de IA em Python. Não é enviado ao Git (exceto scripts úteis via `.gitignore` exceções).
+
+```text
+treino/
+├─ Classificador/     Preparo e treino do classificador de vagas
+├─ Mapeador/          Treino de segmentação, exportação ONNX e validação
+├─ dados/             Dataset local de treino (imagens — ignorado pelo Git)
+└─ ia_mapa/           Serviço SAM (Segment Anything Model) para detecção de vagas
+```
+
+- `treino/Classificador/` — scripts `preparar_dados.py` e `treinar.py`
+- `treino/Mapeador/` — scripts `preparar_dataset.py`, `treinar_segmentacao.py`, `validar_modelo.py`, `exportar_onnx.py`, `testar_previsao.py`
+- `treino/ia_mapa/` — `sam_service.py`, `servidor.py`, `requirements.txt` (modelo SAM `.pth` via Git LFS)
+
+Cada subpasta pode ter seu próprio `.venv`. Ambientes virtuais são ignorados pelo Git.
+
 ### `node_modules/`
 
 Bibliotecas instaladas pelo NPM. Criada automaticamente pelo `npm install`; não vai ao Git.
@@ -175,7 +201,11 @@ Configuração do TypeScript: fonte em `backend/src/`, saída em `dist/`.
 
 ### `.gitignore`
 
-Arquivos/pastas ignoradas pelo Git: `node_modules/`, `dist/`, `data/`, dataset local, `.env`, `.env.*` (exceto `.env.example`), `*.log`, `graphify-out/`, `.graphify-out/`, `treino/dados/`, `*.pt`, `*.onnx`.
+Arquivos/pastas ignoradas pelo Git: `node_modules/`, `dist/`, `data/` (exceto `data/models/`), dataset local, `.env`, `.env.*` (exceto `.env.example`), `*.log`, `graphify-out/`, `.graphify-out/`, `treino/dados/`, `.venv/`, `**/.venv/`, `__pycache__/`, `*.pyc`.
+
+### `.gitattributes`
+
+Configura o Git LFS para arquivos grandes de modelo: `*.pt`, `*.pth`, `*.onnx`. Os modelos ficam em `data/models/`, `ia_mapa/` e `treino/Mapeador/`.
 
 ## Uso da interface
 

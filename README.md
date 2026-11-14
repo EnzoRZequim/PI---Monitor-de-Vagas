@@ -19,6 +19,7 @@ Instale estes programas **antes** de clonar o projeto:
 |----------|---------------|-------------|
 | **Node.js** (com NPM) | Rodar o backend e o frontend | https://nodejs.org/ (escolha a versão LTS) |
 | **Git LFS** | Baixar os modelos de IA (arquivos grandes) | https://git-lfs.com/ |
+| **Python 3** | Rodar scripts de treino e inferência de IA (pasta `treino/`) | https://www.python.org/ |
 
 > ⚠️ **Instale o Git LFS antes de clonar.** Se clonar sem ele, os arquivos grandes não baixarão corretamente. Após instalar, feche e reabra o terminal para que o comando `git lfs` funcione.
 
@@ -90,6 +91,26 @@ O projeto usa Git LFS para gerenciar arquivos grandes (modelos `.pt` e `.onnx`).
 
 - Se você só quer **testar o mapa e a interface**, não precisa do modelo de IA. O sistema funciona sem ele (apenas mostra todas as vagas como livres).
 - Se você for **integrar ou treinar o classificador de IA**, será necessário o Python 3 com o pacote `ultralytics` instalado.
+
+### Scripts de treino e IA (`treino/`)
+
+Os scripts de treinamento, validação e preparação de dados ficam em `treino/`:
+
+- `treino/Classificador/` — preparação e treino do classificador de vagas
+- `treino/Mapeador/` — treino de segmentação, exportação ONNX e validação
+- `treino/ia_mapa/` — serviço SAM (Segment Anything Model) para detecção de vagas
+
+Cada subpasta pode ter seu próprio `.venv` e `requirements.txt`. Para rodar:
+
+```powershell
+# Exemplo: dentro de treino/ia_mapa/
+cd treino\ia_mapa
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+Os modelos treinados (`.pt`, `.onnx`, `.pth`) são versionados com **Git LFS** e ficam em `data/models/` e `ia_mapa/`.
 
 ---
 
