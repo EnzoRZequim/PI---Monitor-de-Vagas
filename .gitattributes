@@ -1,3 +1,13 @@
-*.onnx filter=lfs diff=lfs merge=lfs -text
+# Modelos de IA grandes via Git LFS
 *.pt filter=lfs diff=lfs merge=lfs -text
+*.pth filter=lfs diff=lfs merge=lfs -text
+*.onnx filter=lfs diff=lfs merge=lfs -text
+
+# Caminhos específicos de modelos
+data/models/*.pt filter=lfs diff=lfs merge=lfs -text
 data/models/*.onnx filter=lfs diff=lfs merge=lfs -text
+data/models/mapa/*.pt filter=lfs diff=lfs merge=lfs -text
+data/models/mapa/*.onnx filter=lfs diff=lfs merge=lfs -text
+ia_mapa/*.pth filter=lfs diff=lfs merge=lfs -text
+treino/ia_mapa/*.pth filter=lfs diff=lfs merge=lfs -text
+treino/Mapeador/*.pt filter=lfs diff=lfs merge=lfs -text

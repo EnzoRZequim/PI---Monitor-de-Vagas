@@ -29,5 +29,15 @@ PKLot.v2-640.coco/
 graphify-out/
 .graphify-out/
 
-# Dados de treino
+# Dados de treino (pasta existe localmente, mas conteúdo não sobe ao Git)
 treino/dados/
+
+# Ambientes virtuais Python (raiz e subpastas)
+.venv/
+**/.venv/
+**/__pycache__/
+*.pyc
+
+# Modelos de IA grandes são gerenciados pelo Git LFS
+# data/models/ é exceção ao ignore de data/ para versionar via LFS
+!data/models/
