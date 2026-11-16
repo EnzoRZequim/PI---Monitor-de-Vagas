@@ -1,6 +1,8 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
+import sharp from "sharp";
+
 import { IMAGES_DIR, TEMP_DIR, VIDEOS_DIR } from "../config/paths";
 import { Fatiador } from "./Fatiador";
 import { buscarMapa } from "./MapaStorage";
@@ -20,6 +22,12 @@ const MAPA_VIDEO = "Video";
 const ARQUIVO_VIDEO = "TesteVideo.mp4";
 const INTERVALO_SEGUNDOS = 5;
 const ESPERA_ERRO_MS = 30000;
+
+// Os polígonos do mapa "Video" foram desenhados na Video.jpg (640x480), que é o vídeo (16:9) dentro de
+// um quadro 4:3 com faixas pretas. Os frames saem do vídeo em 16:9, sem faixas, então são encaixados
+// no tamanho do mapa do mesmo jeito; sem isso as vagas ficam deslocadas e a IA lê os lugares errados.
+const encaixarNoMapa = (frame: Buffer, largura: number, altura: number) =>
+  sharp(frame).resize(largura, altura, { fit: "contain", background: "#000000" }).jpeg().toBuffer();
 
 const esperar = (ms: number) => new Promise<void>((resolver) => setTimeout(resolver, ms));
 
@@ -46,7 +54,8 @@ async function repetirVideo(): Promise<void> {
 
   for (;;) {
     for (const frame of frames) {
-      registrarOcupacao(await separarVagas(await readFile(frame), mapa));
+      const imagem = await encaixarNoMapa(await readFile(frame), mapa.Largura, mapa.Altura);
+      registrarOcupacao(await separarVagas(imagem, mapa));
       await esperar(INTERVALO_SEGUNDOS * 1000);
     }
   }
