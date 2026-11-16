@@ -127,6 +127,15 @@ function aplicarOcupacaoReal(campusId: string, bloco: Bloco, ocupacao: OcupacaoD
   notificar();
 }
 
+// O backend caiu: o bloco volta para a simulação, partindo da última ocupação real
+function voltarParaSimulacao(campusId: string, bloco: Bloco) {
+  const estado = estados.get(chaveDoBloco(campusId, bloco));
+  if (!estado?.real) return;
+  const { totalReal: _totalReal, ...resto } = estado;
+  estados.set(chaveDoBloco(campusId, bloco), { ...resto, real: false, ocupadasBase: estado.ocupadas.size });
+  notificar();
+}
+
 // Re-renderiza a tela quando a ocupação de qualquer bloco muda
 export function useOcupacaoAoVivo() {
   return useSyncExternalStore(inscrever, () => versao);
@@ -152,8 +161,13 @@ export function useSimulacaoAoVivo(campusId: string, bloco: Bloco) {
 // Blocos de uma tela que têm mapa no backend. Um mapa pode estar ligado a mais de um bloco.
 export type BlocoDoCampus = { campusId: string; bloco: Bloco };
 
+// Falhas seguidas antes de largar o dado real: uma só (um tempo limite, por exemplo) não faz a planta
+// oscilar entre o real e o simulado
+const FALHAS_PARA_SIMULAR = 2;
+
 const AVISADOS = new Set<string>();
 const EM_ANDAMENTO = new Set<string>();
+const FALHAS_SEGUIDAS = new Map<string, number>();
 
 async function sincronizarMapa(mapaId: string, blocos: BlocoDoCampus[]) {
   if (EM_ANDAMENTO.has(mapaId)) return;
@@ -162,7 +176,11 @@ async function sincronizarMapa(mapaId: string, blocos: BlocoDoCampus[]) {
     const ocupacao = await buscarOcupacaoDoMapa(mapaId);
     blocos.forEach(({ campusId, bloco }) => aplicarOcupacaoReal(campusId, bloco, ocupacao));
     AVISADOS.delete(mapaId);
+    FALHAS_SEGUIDAS.delete(mapaId);
   } catch (erro) {
+    const falhas = (FALHAS_SEGUIDAS.get(mapaId) ?? 0) + 1;
+    FALHAS_SEGUIDAS.set(mapaId, falhas);
+    if (falhas >= FALHAS_PARA_SIMULAR) blocos.forEach(({ campusId, bloco }) => voltarParaSimulacao(campusId, bloco));
     // Sem backend ou sem análise ainda: o bloco segue com a simulação. Avisa uma vez por mapa.
     if (!AVISADOS.has(mapaId)) {
       AVISADOS.add(mapaId);

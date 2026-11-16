@@ -141,7 +141,7 @@ Para arquitetura, estrutura de pastas, rotas da API detalhada, uso da interface 
 
 ### Ligar o app à IA
 
-Os blocos **IMT - São Caetano › Bloco A** e **Bloco B** (e os do campus "Ambiente de teste", só em desenvolvimento) usam os mapas reais `Teste` (32 vagas) e `Video` (42 vagas). Os demais blocos continuam com dados simulados. O app lê a ocupação calculada pela IA em `GET /mapas/:ID/ocupacao`, a cada 5 segundos, enquanto a tela está aberta. Se o backend estiver fora do ar ou ainda sem análise, o bloco segue na simulação.
+Os blocos **IMT - São Caetano › Bloco A** e **Bloco B** (e os do campus "Ambiente de teste", só em desenvolvimento) usam os mapas reais `Teste` (32 vagas) e `Video` (42 vagas). Os demais blocos continuam com dados simulados. O app lê a ocupação calculada pela IA em `GET /mapas/:ID/ocupacao`, a cada 5 segundos, enquanto a tela está aberta. Se o backend ainda não respondeu, ou ficar fora do ar por duas buscas seguidas, o bloco usa a simulação.
 
 1. Suba o backend **com a demonstração ligada**, a partir de `backend/`. No PowerShell:
 
@@ -161,6 +161,8 @@ Os blocos **IMT - São Caetano › Bloco A** e **Bloco B** (e os do campus "Ambi
    npx expo start
    ```
 
+   - O aviso `npm warn deprecated uuid@7.0.3` e o resumo de vulnerabilidades no fim do `npm install` são esperados (vêm das ferramentas internas do Expo). **Não execute `npm audit fix --force`**: ele rebaixa o Expo para uma versão antiga e quebra o projeto.
+   - Para adicionar bibliotecas use `npx expo install <pacote>` em vez de `npm install <pacote>`. Se o `npm install` mostrar avisos `ERESOLVE`, rode `npx expo install --fix`.
    - **Navegador** (tecla `w`): funciona direto, a API padrão é `http://localhost:3000`.
    - **Celular (Expo Go)**: o `localhost` do celular é o próprio aparelho. Copie `Frontend/.env.example` para `Frontend/.env` e coloque o IP do computador na mesma rede Wi-Fi, por exemplo `EXPO_PUBLIC_API_URL=http://192.168.0.10:3000`. Depois recarregue o app.
 
