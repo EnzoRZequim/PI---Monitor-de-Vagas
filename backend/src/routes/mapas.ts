@@ -15,6 +15,7 @@ import {
   updated
 } from "../common/ResponseHelper";
 import { IMAGES_DIR } from "../config/paths";
+import { buscarOcupacaoAtual } from "../services/OcupacaoAtual";
 import { sugerirVaga } from "../services/SamVagas";
 import { detectarVagas } from "../services/DetectorVagasSeg";
 import {
@@ -170,6 +171,23 @@ router.get("/:ID", async (req, res) => {
     console.error("Erro ao buscar mapa:", erro);
     return sendResponse(res, internalError());
   }
+});
+
+// Último resultado de ocupação do mapa (alimentado pelas sessões de monitoramento), lido pelo app
+router.get("/:ID/ocupacao", (req, res) => {
+  const ID = req.params.ID;
+
+  if (typeof ID !== "string" || !ID || !formatoID.test(ID)) {
+    return sendResponse(res, badRequest("ID inválido. Use letras, números e hífens."));
+  }
+
+  const ocupacao = buscarOcupacaoAtual(ID);
+
+  if (!ocupacao) {
+    return sendResponse(res, notFound("Ainda não há análise de ocupação para este mapa."));
+  }
+
+  return sendResponse(res, ok("Ocupação encontrada.", ocupacao));
 });
 
 router.get("/:ID/detectar-vagas", async (req, res) => {

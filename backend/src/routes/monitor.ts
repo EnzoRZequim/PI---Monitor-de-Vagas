@@ -2,6 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
 import { MonitorSession } from '../services/MonitorSession';
+import { registrarOcupacao } from '../services/OcupacaoAtual';
 import { buscarMapa } from '../services/MapaStorage';
 import { TEMP_DIR, VIDEOS_DIR } from '../config/paths';
 import { mkdir, writeFile } from 'fs/promises';
@@ -93,6 +94,7 @@ router.post('/', upload.single('video'), async (req, res) => {
     useMotionOptimization: useMotionOptimization === 'true',
     intervalSeconds: parseInt(intervalSeconds as string, 10) || 5,
     onResult: (resultado: MonitorResult) => {
+      registrarOcupacao(resultado.ocupacao);
       enviarParaClientes(sessionId, JSON.stringify({ tipo: 'resultado', dados: resultado }));
     },
     onStatus: (status: SessionStatus, info?: WsCallbackInfo) => {

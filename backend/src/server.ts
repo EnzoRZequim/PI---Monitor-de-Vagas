@@ -7,6 +7,7 @@ import { IMAGES_DIR, TEMP_DIR } from "./config/paths";
 import mapasRouter from "./routes/mapas";
 import { carregarClassificador } from "./services/ClassificadorVagas";
 import { monitorRouter, anexarWebSocket } from "./routes/monitor";
+import { iniciarMonitorDemo } from "./services/MonitorDemo";
 
 const app = express();
 
@@ -36,6 +37,10 @@ async function iniciarServidor() {
   // Anexa WebSocket para monitoramento de vídeo
   anexarWebSocket(httpServer);
   console.log("WebSocket de monitoramento disponível em ws://localhost:" + porta + "/ws/monitor");
+
+  if (process.env.MONITOR_DEMO === "true") {
+    iniciarMonitorDemo();
+  }
 
   httpServer.listen(porta, () => {
     console.log(`API disponível em http://localhost:${porta}`);
