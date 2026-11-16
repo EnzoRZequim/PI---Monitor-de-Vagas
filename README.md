@@ -1,71 +1,122 @@
 # APP Vaga Livre 🅿️
 
-Sistema de estacionamento inteligente que identifica vagas livres e ocupadas a partir de imagens de câmeras, sem sensores físicos em cada vaga.
+**Sua vaga, sem voltas.**
 
-## O que o projeto faz
+Sistema de estacionamento inteligente que identifica vagas livres e ocupadas a partir de imagens de câmeras, sem sensores físicos em cada vaga. Uma IA classifica cada vaga (livre ou ocupada) e o app mostra o resultado ao motorista.
 
-- **Editor de mapas:** cadastre uma foto do estacionamento e marque as vagas desenhando polígonos ao redor de cada uma.
-- **Monitor de vagas:** carregue uma foto da mesma câmera, visualize as vagas marcadas sobre a imagem e veja se cada vaga está livre ou ocupada.
+## Estrutura do repositório
 
-> ⚠️ **Atenção:** a classificação por IA (saber se a vaga está livre ou ocupada automaticamente) ainda não foi integrada. Por enquanto, o sistema mostra todas as vagas como **livres**, independentemente da imagem. Isso será ajustado em próximas etapas.
+| Pasta | O que é |
+|-------|---------|
+| `Frontend/` | **App Vaga Livre** (Expo / React Native, celular e web). É a interface do usuário. |
+| `backend/` | API em Node.js + TypeScript que guarda os mapas e roda a IA de classificação das vagas. |
+| `frontend-admin/` | Ferramenta web (React + Vite) para cadastrar mapas, desenhar as vagas e testar a IA. |
+| `data/` | Mapas, imagens, vídeo de teste e modelos de IA. |
+| `treino/` | Scripts em Python para treinar os modelos. |
+| `docs/` | Documentação detalhada ([`docs/estrutura_projeto.md`](docs/estrutura_projeto.md)). |
+
+> ⚠️ **Use a branch `feat/integracao-ia`.** O app Expo (`Frontend/`) **não existe na `master`**: quem clona a `master` recebe só o editor web e não encontra o app. Quando esta branch for mesclada na `master`, passe a usar a `master`.
 
 ---
 
-## 📋 Antes de começar (pré-requisitos)
-
-Instale estes programas **antes** de clonar o projeto:
+## 📋 Pré-requisitos
 
 | Programa | Para que serve | Onde baixar |
 |----------|---------------|-------------|
-| **Node.js** (com NPM) | Rodar o backend e o frontend | https://nodejs.org/ (escolha a versão LTS) |
-| **Git LFS** | Baixar os modelos de IA (arquivos grandes) | https://git-lfs.com/ |
-| **Python 3** | Rodar scripts de treino e inferência de IA (pasta `treino/`) | https://www.python.org/ |
+| **Git** | Baixar o projeto | https://git-scm.com/ |
+| **Node.js** (LTS, com NPM) | Rodar o app, o backend e o editor web | https://nodejs.org/ |
+| **Git LFS** | Baixar os modelos de IA (só se for rodar o backend) | https://git-lfs.com/ |
+| **Expo Go** (opcional) | Abrir o app no celular | Play Store / App Store |
 
-> ⚠️ **Instale o Git LFS antes de clonar.** Se clonar sem ele, os arquivos grandes não baixarão corretamente. Após instalar, feche e reabra o terminal para que o comando `git lfs` funcione.
+Python 3 só é necessário para **treinar** modelos (pasta `treino/`), não para rodar o projeto.
 
 ---
 
-## 🚀 Como rodar o projeto (passo a passo)
+## 🚀 Opção 1: só o app (mais rápido)
 
-### 1. Baixar o projeto
-
-Abra um terminal (PowerShell no Windows, ou o terminal integrado do VS Code com `Ctrl + \``) e rode:
+Não precisa de backend nem de Git LFS. Os números de vagas vêm de uma **simulação** dentro do app.
 
 ```powershell
-git clone https://github.com/EnzoRZequim/PI---Monitor-de-Vagas.git
+# Pula o download dos modelos de IA (arquivos grandes, não usados pelo app)
+$env:GIT_LFS_SKIP_SMUDGE = "1"
+git clone -b feat/integracao-ia https://github.com/EnzoRZequim/PI---Monitor-de-Vagas.git
+cd PI---Monitor-de-Vagas\Frontend
+npm install
+npx expo start
+```
+
+Aperte `w` para abrir no navegador, ou escaneie o QR code com o Expo Go (celular na mesma rede Wi-Fi do computador).
+
+Para ver a tela do mapa de vagas, abra **Nossos parceiros › IMT › IMT - São Caetano › Bloco A**.
+
+---
+
+## 🤖 Opção 2: app + IA de verdade
+
+Aqui o app mostra a ocupação calculada pela IA do backend. Use **3 terminais** (PowerShell), todos a partir da raiz do projeto.
+
+### 1. Baixar o projeto e o modelo da IA
+
+Instale o **Git LFS antes de clonar** (depois feche e reabra o terminal). Para baixar só o que o servidor precisa:
+
+```powershell
+git lfs install
+$env:GIT_LFS_SKIP_SMUDGE = "1"
+git clone -b feat/integracao-ia https://github.com/EnzoRZequim/PI---Monitor-de-Vagas.git
 cd PI---Monitor-de-Vagas
+git lfs pull --include="data/models/classificador_vagas.onnx"
 ```
 
-### 2. Baixar os modelos de IA (Git LFS)
+Se preferir baixar tudo de uma vez (sem o `GIT_LFS_SKIP_SMUDGE`), o clone **demora e usa cerca de 400 MB**: a maior parte é do serviço SAM de `treino/`, que não é necessário para rodar.
 
-Como os modelos de IA são arquivos grandes, eles não vêm direto no clone. Após clonar, rode:
+> Sem o arquivo `data/models/classificador_vagas.onnx` de verdade (e não um ponteiro de 132 bytes) o backend **não sobe**: ele carrega o classificador ao iniciar.
 
-```powershell
-git lfs pull
-```
-
-Isso vai baixar os arquivos de modelo (`.pt` e `.onnx`) para a pasta raiz e para `data/models/`.
-
-### 3. Rodar o backend
-
-Abra um terminal, entre na pasta `backend/` (onde está o `package.json` do servidor) e rode:
+### 2. Terminal 1: backend com a demonstração ligada
 
 ```powershell
 cd backend
 npm install
+$env:MONITOR_DEMO = "true"
 npm run dev
 ```
 
-O backend ficará disponível em:
+Espere aparecer `[DEMO] Teste: foto analisada.` e `[DEMO] Video: 3 frames, repetindo em loop.` Para conferir: `http://localhost:3000/saude` deve responder `{"status":"ok"}`.
 
-- API: `http://localhost:3000`
-- Status: `http://localhost:3000/saude`
+Com `MONITOR_DEMO=true` o backend:
+- analisa **uma vez** a foto do mapa `Teste` (32 vagas);
+- analisa **em loop**, a cada 5 s, os frames do vídeo `data/videos/TesteVideo.mp4` do mapa `Video` (42 vagas).
 
-Deixe esse terminal aberto.
+Sem essa variável o backend sobe normal, mas não há ocupação para o app ler, e ele usa a simulação.
 
-### 4. Rodar o frontend web (editor de mapas)
+### 3. Terminal 2: app Expo
 
-Abra **outro terminal**, entre na pasta `frontend-admin/` e rode:
+```powershell
+cd Frontend
+npm install
+npx expo start
+```
+
+- **Navegador** (tecla `w`): funciona direto, a API padrão é `http://localhost:3000`.
+- **Celular (Expo Go)**: o `localhost` do celular é o próprio aparelho. Copie `Frontend/.env.example` para `Frontend/.env` e coloque o IP do computador na mesma rede Wi-Fi (veja com `ipconfig`):
+
+  ```
+  EXPO_PUBLIC_API_URL=http://192.168.0.10:3000
+  ```
+
+  Depois reinicie o `npx expo start`. Se não conectar, o firewall do Windows pode estar bloqueando a porta 3000.
+
+### 4. Como saber que está usando a IA
+
+Abra **Nossos parceiros › IMT › IMT - São Caetano**:
+
+| Bloco | Mapa no backend | Esperado |
+|-------|-----------------|----------|
+| **Bloco A** | `Teste` (foto) | `16/32`, número **fixo** |
+| **Bloco B** | `Video` (vídeo) | `27/42`, `27/42`, `22/42`, repetindo a cada 5 s |
+
+Os blocos C a F e os demais parceiros continuam com **dados simulados** (100/100, 50/100...), pois só existem os mapas `Teste` e `Video`. Se o Bloco A mostrar `1/32` e variar, o app não alcançou o backend. Se o backend cair, os blocos voltam sozinhos para a simulação depois de duas buscas seguidas sem resposta (cerca de 10 s).
+
+### 5. Comparar com o editor web (opcional)
 
 ```powershell
 cd frontend-admin
@@ -73,97 +124,66 @@ npm install
 npm run dev
 ```
 
-O frontend ficará disponível em: `http://localhost:5173`
+Abra `http://localhost:5173` (o backend precisa estar rodando):
+1. **Editor de mapas** › `teste2` (é o mapa `Teste`) ou `TesteVideo` (é o `Video`): a foto com as vagas desenhadas.
+2. **Monitor de vagas** › escolha `teste2` e a imagem `estacionamento 2` (ou `TesteVideo` e `Video.jpg`) e clique em **Analisar**. O resultado deve bater com o app (16 de 32 no `Teste`, 27 de 42 no `Video`).
 
-> O frontend web precisa do backend rodando para funcionar. Então sempre inicie o backend primeiro (passo 3) e depois o frontend (passo 4).
-
-### 5. Usar o sistema
-
-1. Abra o navegador em `http://localhost:5173`
-2. Na aba **Editor de mapas**, selecione o mapa `teste2` (já vem com 32 vagas marcadas)
-3. Na aba **Monitor de vagas**, selecione o mapa `teste2` e a imagem `estacionamento 2`
-4. Clique em **Analisar** para ver as vagas (por enquanto, todas aparecerão como livres)
+Os arquivos `estacionamento 2.jpg`, `Teste.jpg` e `Video.jpg` estão em `data/images/`.
 
 ---
 
-## ⚠️ Sobre o modelo de IA
+## 🛠️ Problemas comuns
 
-O projeto usa Git LFS para gerenciar arquivos grandes (modelos `.pt` e `.onnx`).
+| Problema | Causa e solução |
+|----------|-----------------|
+| Não existe a pasta `Frontend/` | Você clonou a `master`. Use `git clone -b feat/integracao-ia ...` ou, num clone existente, `git fetch` e `git switch feat/integracao-ia`. |
+| `fatal: Remote branch feat/integracao-ia not found` | A branch ainda não foi enviada ao GitHub. Peça para quem fez o trabalho dar `git push -u origin feat/integracao-ia`. |
+| O clone demora muito ou trava | O Git LFS está baixando todos os modelos (~400 MB). Use `GIT_LFS_SKIP_SMUDGE=1` (veja as opções acima). |
+| `npm install` no `Frontend/` mostra `uuid@7.0.3` deprecated e vulnerabilidades | É esperado (vem das ferramentas internas do Expo). **Não rode `npm audit fix --force`**: ele rebaixa o Expo e quebra o projeto. |
+| `npm install` mostra `ERESOLVE` | Rode `npx expo install --fix`. Para adicionar bibliotecas use `npx expo install <pacote>`, não `npm install <pacote>`. |
+| O backend fecha ao iniciar | Falta o modelo `data/models/classificador_vagas.onnx` real (rode `git lfs pull`), ou a porta 3000 está em uso por outro programa. |
+| O app mostra tudo simulado | O backend está desligado, sem `MONITOR_DEMO=true`, ou (no celular) falta o `EXPO_PUBLIC_API_URL`. |
+| `npm run dev:all` não funciona | Esse atalho não existe mais. Rode cada parte no seu terminal, como acima. |
 
-- Se você só quer **testar o mapa e a interface**, não precisa do modelo de IA. O sistema funciona sem ele (apenas mostra todas as vagas como livres).
-- Se você for **integrar ou treinar o classificador de IA**, será necessário o Python 3 com o pacote `ultralytics` instalado.
+---
+
+## 🧠 Sobre a IA
+
+O backend recorta cada vaga da imagem (usando os pontos do mapa) e classifica o recorte com um modelo MobileNet V3 Small (ONNX): `data/models/classificador_vagas.onnx`. A resposta traz, para cada vaga, `Ocupada` e `Sobreposicao` (a confiança).
+
+- As coordenadas das vagas são **normalizadas (0 a 1)** e valem para a imagem em que o mapa foi desenhado. Uma imagem com proporção diferente desloca as vagas e o resultado fica errado. Por isso a demonstração encaixa os frames do vídeo no quadro 4:3 da `Video.jpg` (que tem faixas pretas).
+- O app lê o resultado em `GET /mapas/:ID/ocupacao`, a cada 5 s, enquanto a tela está aberta.
 
 ### Scripts de treino e IA (`treino/`)
 
-Os scripts de treinamento, validação e preparação de dados ficam em `treino/`:
+- `treino/Classificador/`: preparação e treino do classificador de vagas
+- `treino/Mapeador/`: treino de segmentação, exportação ONNX e validação
+- `treino/ia_mapa/`: serviço SAM (Segment Anything Model) para detecção de vagas (usado pelo botão "Criar vagas com IA" do editor)
 
-- `treino/Classificador/` — preparação e treino do classificador de vagas
-- `treino/Mapeador/` — treino de segmentação, exportação ONNX e validação
-- `treino/ia_mapa/` — serviço SAM (Segment Anything Model) para detecção de vagas
-
-Cada subpasta pode ter seu próprio `.venv` e `requirements.txt`. Para rodar:
+Cada subpasta pode ter seu próprio `.venv` e `requirements.txt`:
 
 ```powershell
-# Exemplo: dentro de treino/ia_mapa/
 cd treino\ia_mapa
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
-Os modelos treinados (`.pt`, `.onnx`, `.pth`) são versionados com **Git LFS** e ficam em `data/models/` e `ia_mapa/`.
+Os modelos (`.pt`, `.pth`, `.onnx`) são versionados com **Git LFS**.
 
 ---
 
-## 🗺️ Arquivos de teste já incluídos
+## 🗺️ Dados de teste incluídos
 
-O repositório já vem com arquivos prontos para você testar sem precisar cadastrar nada:
+- **Mapa `Teste`** (nome `teste2`): 32 vagas, imagem `estacionamento 2.jpg`.
+- **Mapa `Video`** (nome `TesteVideo`): 42 vagas, imagem `Video.jpg`, vídeo `data/videos/TesteVideo.mp4`.
 
-- **Mapa:** `teste2` — 32 vagas já mapeadas
-- **Imagem:** `estacionamento 2` — foto de referência do estacionamento
-
-Basta selecionar esses arquivos na interface para começar a usar.
+Os IDs e nomes das vagas desses mapas estão copiados em `Frontend/src/dados/mapasBackend.ts`. Se um mapa mudar em `data/maps/`, atualize esse arquivo.
 
 ---
 
-## 📚 Documentação detalhada
+## 📚 Documentação
 
-Para arquitetura, estrutura de pastas, rotas da API detalhada, uso da interface e próximos passos, consulte:
-
-👉 [`docs/estrutura_projeto.md`](docs/estrutura_projeto.md)
-
-
----
-
-## 📱 App Vaga Livre (Expo, pasta `Frontend/`)
-
-É a interface definitiva, em React Native (celular e web). O `frontend-admin/` (Vite) fica só como editor de mapas e monitor de testes.
-
-### Ligar o app à IA
-
-Os blocos **IMT - São Caetano › Bloco A** e **Bloco B** (e os do campus "Ambiente de teste", só em desenvolvimento) usam os mapas reais `Teste` (32 vagas) e `Video` (42 vagas). Os demais blocos continuam com dados simulados. O app lê a ocupação calculada pela IA em `GET /mapas/:ID/ocupacao`, a cada 5 segundos, enquanto a tela está aberta. Se o backend ainda não respondeu, ou ficar fora do ar por duas buscas seguidas, o bloco usa a simulação.
-
-1. Suba o backend **com a demonstração ligada**, a partir de `backend/`. No PowerShell:
-
-   ```powershell
-   cd backend
-   npm install
-   $env:MONITOR_DEMO = "true"; npm run dev
-   ```
-
-   Com `MONITOR_DEMO=true` o backend analisa a foto do mapa `Teste` uma vez e repete em loop os frames do vídeo do mapa `Video`. Sem essa variável ele funciona como antes e o app usa a simulação.
-
-2. Suba o app, em outro terminal:
-
-   ```powershell
-   cd Frontend
-   npm install
-   npx expo start
-   ```
-
-   - O aviso `npm warn deprecated uuid@7.0.3` e o resumo de vulnerabilidades no fim do `npm install` são esperados (vêm das ferramentas internas do Expo). **Não execute `npm audit fix --force`**: ele rebaixa o Expo para uma versão antiga e quebra o projeto.
-   - Para adicionar bibliotecas use `npx expo install <pacote>` em vez de `npm install <pacote>`. Se o `npm install` mostrar avisos `ERESOLVE`, rode `npx expo install --fix`.
-   - **Navegador** (tecla `w`): funciona direto, a API padrão é `http://localhost:3000`.
-   - **Celular (Expo Go)**: o `localhost` do celular é o próprio aparelho. Copie `Frontend/.env.example` para `Frontend/.env` e coloque o IP do computador na mesma rede Wi-Fi, por exemplo `EXPO_PUBLIC_API_URL=http://192.168.0.10:3000`. Depois recarregue o app.
-
-> Os IDs e nomes das vagas dos mapas reais estão copiados em `Frontend/src/dados/mapasBackend.ts`. Se um mapa mudar em `data/maps/`, atualize esse arquivo.
+- [`docs/estrutura_projeto.md`](docs/estrutura_projeto.md): pastas, API e uso das interfaces.
+- [`Frontend/README.md`](Frontend/README.md): detalhes do app.
+- O dataset [PKLot no Roboflow](https://public.roboflow.com/object-detection/pklot) foi a base de treino (licença CC BY 4.0; cite o trabalho original em publicações).

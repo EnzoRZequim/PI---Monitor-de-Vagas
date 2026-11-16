@@ -253,7 +253,7 @@ A imagem enviada precisa ter proporção compatível com a imagem de referência
 
 **`POST /mapas/:ID/analisar`**: envie `multipart/form-data` com o campo `Imagem`. A resposta contém `MapaID`, `Data` e lista de vagas com `ID`, `Nome`, `Ocupada` e `Sobreposicao`.
 
-> ⚠️ Atualmente a rota de análise retorna todas as vagas como **livres**, pois o classificador de IA ainda não foi integrado.
+> O classificador (MobileNet V3 Small, ONNX) é carregado ao iniciar o servidor: sem o arquivo real `data/models/classificador_vagas.onnx` (Git LFS) o backend não sobe.
 
 ## Dataset de exemplo
 
@@ -265,12 +265,13 @@ Antes de usar o dataset em relatórios ou apresentações, consulte os termos de
 
 ## Próximas etapas
 
-1. Treinar um classificador de vagas (livre/ocupada) com o dataset PKLot e exportar para ONNX.
-2. Integrar o classificador à rota `POST /mapas/:ID/analisar`.
-3. Aplicar histerese para evitar alternância de estado entre análises consecutivas.
-4. Armazenar resultados de ocupação em `data/occupancy/`.
-5. Avaliar acurácia, precisão e recall com o PKLot.
-6. Integrar atualização em tempo real (foto a cada X segundos de vídeo/câmera).
+Já feitos: classificador treinado e integrado à rota `POST /mapas/:ID/analisar`, monitoramento de vídeo e integração do app Expo com a ocupação real.
+
+1. Aplicar histerese para evitar alternância de estado entre análises consecutivas.
+2. Avaliar acurácia, precisão e recall com o PKLot.
+3. Mapear mais estacionamentos além de `Teste` e `Video` e ligá-los aos blocos do app.
+4. Receber imagens de câmeras reais em vez do vídeo de teste.
+5. Guardar o histórico de ocupação (hoje a tela Dados do app é simulada).
 
 
 ## App Expo (`Frontend/`)
