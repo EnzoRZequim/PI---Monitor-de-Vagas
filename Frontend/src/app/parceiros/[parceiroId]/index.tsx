@@ -4,8 +4,8 @@ import { CartaoLocal } from '@/components/cartoes/CartaoLocal';
 import { LocalNaoEncontrado } from '@/components/telas/LocalNaoEncontrado';
 import { TelaLista } from '@/components/telas/TelaLista';
 import { useTelaPequena } from '@/hooks/useTelaPequena';
-import { useOcupacaoAoVivo } from '@/dados/ocupacaoAoVivo';
-import { buscarParceiro, ocupacaoDoCampus, type Campus } from '@/dados/parceiros';
+import { useOcupacaoAoVivo, useOcupacaoReal } from '@/dados/ocupacaoAoVivo';
+import { blocosDoParceiro, buscarParceiro, ocupacaoDoCampus, type Campus } from '@/dados/parceiros';
 import { rotaDoCampus } from '@/rotas';
 
 const chave = (c: Campus) => c.id;
@@ -17,6 +17,7 @@ export default function TelaLocais() {
   const telaPequena = useTelaPequena();
   // Os números dos cartões acompanham a ocupação ao vivo dos mapas
   useOcupacaoAoVivo();
+  useOcupacaoReal(blocosDoParceiro(parceiro));
 
   if (!parceiro) return <LocalNaoEncontrado />;
 

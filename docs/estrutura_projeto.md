@@ -21,7 +21,8 @@ PI---Monitor-de-Vagas/
 │  ├─ occupancy/
 │  └─ temp/
 ├─ docs/
-├─ frontend/
+├─ frontend-admin/
+├─ Frontend/
 │  ├─ package.json
 │  ├─ vite.config.ts
 │  ├─ index.html
@@ -121,12 +122,12 @@ Ao iniciar o servidor, a aplicação cria essa estrutura automaticamente na raiz
 
 Documentação do projeto. Este arquivo explica pastas e responsabilidades.
 
-### `frontend/`
+### `frontend-admin/`
 
-Interface web em React + Vite.
+Interface web em React + Vite (editor de mapas e monitor de testes).
 
 ```text
-frontend/
+frontend-admin/
 ├─ package.json
 ├─ vite.config.ts
 ├─ index.html
@@ -212,7 +213,7 @@ Configura o Git LFS para arquivos grandes de modelo: `*.pt`, `*.pth`, `*.onnx`. 
 ### Editor de mapas
 
 1. Inicie o backend com `npm run dev` na raiz.
-2. Inicie o frontend com `npm run dev` em `frontend/`.
+2. Inicie o frontend web com `npm run dev` em `frontend-admin/`.
 3. Abra `http://localhost:5173` na aba **Editor de mapas**.
 4. Selecione ou crie um mapa informando ID, nome e imagem.
 5. Clique em **Nova vaga** e marque exatamente os quatro cantos da vaga.
@@ -241,6 +242,7 @@ A imagem enviada precisa ter proporção compatível com a imagem de referência
 | `GET` | `/mapas/:ID` | Retorna um mapa cadastrado |
 | `PUT` | `/mapas/:ID/vagas` | Atualiza lista completa de vagas do mapa |
 | `POST` | `/mapas/:ID/analisar` | Analisa imagem e retorna estado das vagas |
+| `GET` | `/mapas/:ID/ocupacao` | Último resultado de ocupação do mapa (lido pelo app Expo) |
 | `GET` | `/imagens/:arquivo` | Exibe imagem de referência cadastrada |
 
 ### Detalhes das requisições
@@ -269,3 +271,8 @@ Antes de usar o dataset em relatórios ou apresentações, consulte os termos de
 4. Armazenar resultados de ocupação em `data/occupancy/`.
 5. Avaliar acurácia, precisão e recall com o PKLot.
 6. Integrar atualização em tempo real (foto a cada X segundos de vídeo/câmera).
+
+
+## App Expo (`Frontend/`)
+
+Interface definitiva em React Native (Expo). Lê a ocupação em `GET /mapas/:ID/ocupacao` para os blocos que têm `mapaId` em `Frontend/src/dados/parceiros.ts`. A URL da API vem de `EXPO_PUBLIC_API_URL` (veja `Frontend/.env.example`). O backend só tem dados de ocupação quando uma sessão de monitoramento está ativa; para demonstração, inicie-o com `MONITOR_DEMO=true` (`backend/src/services/MonitorDemo.ts`).

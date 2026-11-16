@@ -1,12 +1,13 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useSyncExternalStore } from 'react';
 
+import { buscarOcupacaoDoMapa, type OcupacaoDoBackend } from '@/dados/api';
 import type { Bloco } from '@/dados/parceiros';
 import { criarSorteio, gerarPlanta, type Planta } from '@/dados/mapaVagas';
 
-// Ocupação das vagas de cada bloco, simulando o que a câmera enviaria. Dados provisórios: quando o
-// backend estiver integrado, `aplicarOcupacao` recebe o OcupacaoMapa (Vagas[].Ocupada) no lugar do
-// sorteio de `simular`.
+// Ocupação das vagas de cada bloco. Os blocos com `mapaId` recebem a ocupação real da IA do backend
+// (`sincronizarComBackend`); os demais, e os ligados enquanto o backend ainda não respondeu, usam a
+// simulação (`simular`), que imita o que a câmera enviaria.
 type EstadoBloco = {
   planta: Planta;
   // IDs das vagas ocupadas
@@ -14,6 +15,10 @@ type EstadoBloco = {
   // Ocupação de partida, em torno da qual a simulação oscila
   ocupadasBase: number;
   sorteio: () => number;
+  // Já recebeu a ocupação real do backend: a simulação para de mexer neste bloco
+  real: boolean;
+  // Total de vagas informado pelo backend, que vale mais que o do bloco
+  totalReal?: number;
 };
 
 // A cada intervalo, 1 ou 2 vagas trocam de estado (um carro entra ou sai)
@@ -60,7 +65,7 @@ function estadoDoBloco(campusId: string, bloco: Bloco): EstadoBloco {
   }
   const quantidade = Math.min(Math.max(bloco.vagasOcupadas, 0), ids.length);
 
-  estado = { planta, ocupadas: new Set(ids.slice(0, quantidade)), ocupadasBase: quantidade, sorteio };
+  estado = { planta, ocupadas: new Set(ids.slice(0, quantidade)), ocupadasBase: quantidade, sorteio, real: false };
   estados.set(chave, estado);
   return estado;
 }
@@ -72,7 +77,10 @@ export function plantaDoBloco(campusId: string, bloco: Bloco) {
 // Lido pelas listas: antes do mapa ser aberto vale o número do bloco, depois vale o da simulação
 export function ocupacaoDoBloco(campusId: string, bloco: Bloco) {
   const estado = estados.get(chaveDoBloco(campusId, bloco));
-  return { vagasOcupadas: estado ? estado.ocupadas.size : bloco.vagasOcupadas, vagasTotais: bloco.vagasTotais };
+  return {
+    vagasOcupadas: estado ? estado.ocupadas.size : bloco.vagasOcupadas,
+    vagasTotais: estado?.totalReal ?? bloco.vagasTotais,
+  };
 }
 
 function aplicarOcupacao(chave: string, ocupadas: ReadonlySet<string>) {
@@ -88,6 +96,7 @@ function simular(campusId: string, bloco: Bloco) {
   if (bloco.ocupacaoFixa) return;
   const chave = chaveDoBloco(campusId, bloco);
   const estado = estadoDoBloco(campusId, bloco);
+  if (estado.real) return;
   const ocupadas = new Set(estado.ocupadas);
   const total = estado.planta.Vagas.length;
   const trocas = estado.sorteio() < 0.5 ? 1 : 2;
@@ -104,6 +113,18 @@ function simular(campusId: string, bloco: Bloco) {
   }
 
   aplicarOcupacao(chave, ocupadas);
+}
+
+// Troca a ocupação do bloco pela que a IA do backend mediu. Só vagas que existem na planta entram.
+function aplicarOcupacaoReal(campusId: string, bloco: Bloco, ocupacao: OcupacaoDoBackend) {
+  const chave = chaveDoBloco(campusId, bloco);
+  const estado = estadoDoBloco(campusId, bloco);
+  const idsDaPlanta = new Set(estado.planta.Vagas.map((vaga) => vaga.ID));
+  const ocupadas = new Set(
+    ocupacao.Vagas.filter((vaga) => vaga.Ocupada && idsDaPlanta.has(vaga.ID)).map((vaga) => vaga.ID),
+  );
+  estados.set(chave, { ...estado, ocupadas, real: true, totalReal: ocupacao.Vagas.length });
+  notificar();
 }
 
 // Re-renderiza a tela quando a ocupação de qualquer bloco muda
@@ -125,5 +146,54 @@ export function useSimulacaoAoVivo(campusId: string, bloco: Bloco) {
       const id = setInterval(() => simular(campusId, bloco), INTERVALO_SIMULACAO);
       return () => clearInterval(id);
     }, [campusId, bloco]),
+  );
+}
+
+// Blocos de uma tela que têm mapa no backend. Um mapa pode estar ligado a mais de um bloco.
+export type BlocoDoCampus = { campusId: string; bloco: Bloco };
+
+const AVISADOS = new Set<string>();
+const EM_ANDAMENTO = new Set<string>();
+
+async function sincronizarMapa(mapaId: string, blocos: BlocoDoCampus[]) {
+  if (EM_ANDAMENTO.has(mapaId)) return;
+  EM_ANDAMENTO.add(mapaId);
+  try {
+    const ocupacao = await buscarOcupacaoDoMapa(mapaId);
+    blocos.forEach(({ campusId, bloco }) => aplicarOcupacaoReal(campusId, bloco, ocupacao));
+    AVISADOS.delete(mapaId);
+  } catch (erro) {
+    // Sem backend ou sem análise ainda: o bloco segue com a simulação. Avisa uma vez por mapa.
+    if (!AVISADOS.has(mapaId)) {
+      AVISADOS.add(mapaId);
+      console.warn(`Ocupação real do mapa "${mapaId}" indisponível, usando a simulação.`, erro);
+    }
+  } finally {
+    EM_ANDAMENTO.delete(mapaId);
+  }
+}
+
+function sincronizarComBackend(blocos: readonly BlocoDoCampus[]) {
+  const porMapa = new Map<string, BlocoDoCampus[]>();
+  blocos.forEach((item) => {
+    if (!item.bloco.mapaId) return;
+    porMapa.set(item.bloco.mapaId, [...(porMapa.get(item.bloco.mapaId) ?? []), item]);
+  });
+  porMapa.forEach((lista, mapaId) => void sincronizarMapa(mapaId, lista));
+}
+
+// Busca a ocupação real dos blocos ligados ao backend, na hora e depois a cada intervalo, só enquanto
+// a tela está em foco. Use nas telas que mostram a ocupação (listas e mapa do bloco).
+// A lista precisa ter sempre a mesma identidade (use blocosDoCampus/blocosDoParceiro/blocoDoCampus):
+// uma lista nova a cada render reiniciaria o intervalo e buscaria de novo a cada atualização.
+export function useOcupacaoReal(blocos: readonly BlocoDoCampus[]) {
+  useFocusEffect(
+    useCallback(() => {
+      if (!blocos.some((item) => item.bloco.mapaId)) return;
+      const buscar = () => sincronizarComBackend(blocos);
+      buscar();
+      const id = setInterval(buscar, INTERVALO_SIMULACAO);
+      return () => clearInterval(id);
+    }, [blocos]),
   );
 }

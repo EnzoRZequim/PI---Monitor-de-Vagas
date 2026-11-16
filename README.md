@@ -48,9 +48,10 @@ Isso vai baixar os arquivos de modelo (`.pt` e `.onnx`) para a pasta raiz e para
 
 ### 3. Rodar o backend
 
-Abra um terminal na **raiz do projeto** (onde está o arquivo `package.json`) e rode:
+Abra um terminal, entre na pasta `backend/` (onde está o `package.json` do servidor) e rode:
 
 ```powershell
+cd backend
 npm install
 npm run dev
 ```
@@ -62,19 +63,19 @@ O backend ficará disponível em:
 
 Deixe esse terminal aberto.
 
-### 4. Rodar o frontend
+### 4. Rodar o frontend web (editor de mapas)
 
-Abra **outro terminal**, entre na pasta `frontend/` e rode:
+Abra **outro terminal**, entre na pasta `frontend-admin/` e rode:
 
 ```powershell
-cd frontend
+cd frontend-admin
 npm install
 npm run dev
 ```
 
 O frontend ficará disponível em: `http://localhost:5173`
 
-> O frontend precisa do backend rodando para funcionar. Então sempre inicie o backend primeiro (passo 3) e depois o frontend (passo 4).
+> O frontend web precisa do backend rodando para funcionar. Então sempre inicie o backend primeiro (passo 3) e depois o frontend (passo 4).
 
 ### 5. Usar o sistema
 
@@ -130,3 +131,37 @@ Basta selecionar esses arquivos na interface para começar a usar.
 Para arquitetura, estrutura de pastas, rotas da API detalhada, uso da interface e próximos passos, consulte:
 
 👉 [`docs/estrutura_projeto.md`](docs/estrutura_projeto.md)
+
+
+---
+
+## 📱 App Vaga Livre (Expo, pasta `Frontend/`)
+
+É a interface definitiva, em React Native (celular e web). O `frontend-admin/` (Vite) fica só como editor de mapas e monitor de testes.
+
+### Ligar o app à IA
+
+Os blocos **IMT - São Caetano › Bloco A** e **Bloco B** (e os do campus "Ambiente de teste", só em desenvolvimento) usam os mapas reais `Teste` (32 vagas) e `Video` (42 vagas). Os demais blocos continuam com dados simulados. O app lê a ocupação calculada pela IA em `GET /mapas/:ID/ocupacao`, a cada 5 segundos, enquanto a tela está aberta. Se o backend estiver fora do ar ou ainda sem análise, o bloco segue na simulação.
+
+1. Suba o backend **com a demonstração ligada**, a partir de `backend/`. No PowerShell:
+
+   ```powershell
+   cd backend
+   npm install
+   $env:MONITOR_DEMO = "true"; npm run dev
+   ```
+
+   Com `MONITOR_DEMO=true` o backend analisa a foto do mapa `Teste` uma vez e repete em loop os frames do vídeo do mapa `Video`. Sem essa variável ele funciona como antes e o app usa a simulação.
+
+2. Suba o app, em outro terminal:
+
+   ```powershell
+   cd Frontend
+   npm install
+   npx expo start
+   ```
+
+   - **Navegador** (tecla `w`): funciona direto, a API padrão é `http://localhost:3000`.
+   - **Celular (Expo Go)**: o `localhost` do celular é o próprio aparelho. Copie `Frontend/.env.example` para `Frontend/.env` e coloque o IP do computador na mesma rede Wi-Fi, por exemplo `EXPO_PUBLIC_API_URL=http://192.168.0.10:3000`. Depois recarregue o app.
+
+> Os IDs e nomes das vagas dos mapas reais estão copiados em `Frontend/src/dados/mapasBackend.ts`. Se um mapa mudar em `data/maps/`, atualize esse arquivo.

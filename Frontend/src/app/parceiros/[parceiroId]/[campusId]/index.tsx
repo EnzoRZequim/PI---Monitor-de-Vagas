@@ -4,8 +4,8 @@ import { useEffect } from 'react';
 import { CartaoLocal } from '@/components/cartoes/CartaoLocal';
 import { LocalNaoEncontrado } from '@/components/telas/LocalNaoEncontrado';
 import { TelaLista } from '@/components/telas/TelaLista';
-import { buscarCampus, buscarParceiro, type Bloco } from '@/dados/parceiros';
-import { ocupacaoDoBloco, useOcupacaoAoVivo } from '@/dados/ocupacaoAoVivo';
+import { buscarCampus, buscarParceiro, blocosDoCampus, type Bloco } from '@/dados/parceiros';
+import { ocupacaoDoBloco, useOcupacaoAoVivo, useOcupacaoReal } from '@/dados/ocupacaoAoVivo';
 import { salvarUltimoLocal } from '@/dados/ultimoLocal';
 import { rotaDoBloco, rotaDoParceiro } from '@/rotas';
 
@@ -21,6 +21,7 @@ export default function TelaBlocos() {
   const campus = buscarCampus(parceiro, campusId);
   // Os números dos cartões acompanham a ocupação ao vivo dos mapas
   useOcupacaoAoVivo();
+  useOcupacaoReal(blocosDoCampus(campus));
 
   // Abrir os blocos de um campus o registra como "Último local visitado" na tela inicial
   useEffect(() => {

@@ -1,7 +1,7 @@
-import { VAGAS_TESTE, VAGAS_VIDEO } from '@/dados/mapasBackend';
-import { ocupacaoDoBloco } from '@/dados/ocupacaoAoVivo';
+import { MAPA_TESTE, MAPA_VIDEO, VAGAS_TESTE, VAGAS_VIDEO } from '@/dados/mapasBackend';
+import { ocupacaoDoBloco, type BlocoDoCampus } from '@/dados/ocupacaoAoVivo';
 
-// Dados provisórios até a integração com a API do backend
+// Dados provisórios: só os blocos com `mapaId` recebem a ocupação real da IA do backend
 export type Bloco = {
   id: string;
   nome: string;
@@ -11,6 +11,8 @@ export type Bloco = {
   vagas?: { ID: string; Nome: string }[];
   // A simulação ao vivo não mexe na ocupação deste bloco
   ocupacaoFixa?: boolean;
+  // ID do mapa no backend (data/maps/<ID>.json): a ocupação vem da IA em vez da simulação
+  mapaId?: string;
 };
 
 export type Campus = {
@@ -39,8 +41,23 @@ const parceirosReais: Parceiro[] = [
         id: 'sao-caetano',
         nome: 'IMT - São Caetano',
         blocos: [
-          { id: 'a', nome: 'Bloco A', vagasOcupadas: 1, vagasTotais: 100 },
-          { id: 'b', nome: 'Bloco B', vagasOcupadas: 50, vagasTotais: 100 },
+          // Blocos A e B usam os mapas reais "Teste" e "Video" do backend (mesmos IDs e nomes de vaga)
+          {
+            id: 'a',
+            nome: 'Bloco A',
+            vagasOcupadas: 1,
+            vagasTotais: VAGAS_TESTE.length,
+            vagas: VAGAS_TESTE,
+            mapaId: MAPA_TESTE,
+          },
+          {
+            id: 'b',
+            nome: 'Bloco B',
+            vagasOcupadas: 50,
+            vagasTotais: VAGAS_VIDEO.length,
+            vagas: VAGAS_VIDEO,
+            mapaId: MAPA_VIDEO,
+          },
           { id: 'c', nome: 'Bloco C', vagasOcupadas: 100, vagasTotais: 100 },
           { id: 'd', nome: 'Bloco D', vagasOcupadas: 50, vagasTotais: 100 },
           { id: 'e', nome: 'Bloco E', vagasOcupadas: 23, vagasTotais: 60 },
@@ -111,8 +128,22 @@ const parceiroDeTeste: Parceiro = {
       nome: 'Campus de teste',
       blocos: [
         // Mesmas vagas (ID e nome) dos mapas "Teste" e "Video" do backend
-        { id: 'teste', nome: 'Teste', vagasOcupadas: 10, vagasTotais: VAGAS_TESTE.length, vagas: VAGAS_TESTE },
-        { id: 'video', nome: 'Vídeo', vagasOcupadas: 18, vagasTotais: VAGAS_VIDEO.length, vagas: VAGAS_VIDEO },
+        {
+          id: 'teste',
+          nome: 'Teste',
+          vagasOcupadas: 10,
+          vagasTotais: VAGAS_TESTE.length,
+          vagas: VAGAS_TESTE,
+          mapaId: MAPA_TESTE,
+        },
+        {
+          id: 'video',
+          nome: 'Vídeo',
+          vagasOcupadas: 18,
+          vagasTotais: VAGAS_VIDEO.length,
+          vagas: VAGAS_VIDEO,
+          mapaId: MAPA_VIDEO,
+        },
         // Casos extremos: bloco cheio e que não muda, e bloco com poucas vagas
         { id: 'lotado', nome: 'Lotado', vagasOcupadas: 20, vagasTotais: 20, ocupacaoFixa: true },
         { id: 'pequeno', nome: 'Pequeno', vagasOcupadas: 2, vagasTotais: 6 },
@@ -122,6 +153,34 @@ const parceiroDeTeste: Parceiro = {
 };
 
 export const parceiros: Parceiro[] = __DEV__ ? [...parceirosReais, parceiroDeTeste] : parceirosReais;
+
+// Blocos de cada nível, para as telas buscarem a ocupação real dos que têm `mapaId`. As listas são
+// guardadas para terem sempre a mesma identidade (o hook useOcupacaoReal depende disso).
+export const SEM_BLOCOS: readonly BlocoDoCampus[] = [];
+
+const blocosPorCampus = new WeakMap<Campus, readonly BlocoDoCampus[]>();
+export function blocosDoCampus(campus: Campus | undefined): readonly BlocoDoCampus[] {
+  if (!campus) return SEM_BLOCOS;
+  let blocos = blocosPorCampus.get(campus);
+  if (!blocos) {
+    blocos = campus.blocos.map((bloco) => ({ campusId: campus.id, bloco }));
+    blocosPorCampus.set(campus, blocos);
+  }
+  return blocos;
+}
+
+const blocosPorParceiro = new WeakMap<Parceiro, readonly BlocoDoCampus[]>();
+export function blocosDoParceiro(parceiro: Parceiro | undefined): readonly BlocoDoCampus[] {
+  if (!parceiro) return SEM_BLOCOS;
+  let blocos = blocosPorParceiro.get(parceiro);
+  if (!blocos) {
+    blocos = parceiro.campi.flatMap(blocosDoCampus);
+    blocosPorParceiro.set(parceiro, blocos);
+  }
+  return blocos;
+}
+
+export const todosOsBlocos: readonly BlocoDoCampus[] = parceiros.flatMap(blocosDoParceiro);
 
 // Campus e parceiro mostram a soma das vagas dos seus blocos
 // (com a ocupação ao vivo, se o mapa do bloco já foi aberto)

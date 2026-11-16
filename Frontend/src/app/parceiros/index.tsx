@@ -2,8 +2,8 @@ import { router } from 'expo-router';
 
 import { CartaoLocal } from '@/components/cartoes/CartaoLocal';
 import { TelaLista } from '@/components/telas/TelaLista';
-import { useOcupacaoAoVivo } from '@/dados/ocupacaoAoVivo';
-import { ocupacaoDoParceiro, parceiros, type Parceiro } from '@/dados/parceiros';
+import { useOcupacaoAoVivo, useOcupacaoReal } from '@/dados/ocupacaoAoVivo';
+import { ocupacaoDoParceiro, parceiros, todosOsBlocos, type Parceiro } from '@/dados/parceiros';
 import { rotaDoParceiro } from '@/rotas';
 
 const chave = (p: Parceiro) => p.id;
@@ -12,6 +12,7 @@ const textoBusca = (p: Parceiro) => p.nome;
 export default function TelaParceiros() {
   // Os números dos cartões acompanham a ocupação ao vivo dos mapas
   useOcupacaoAoVivo();
+  useOcupacaoReal(todosOsBlocos);
 
   return (
     <TelaLista

@@ -2,8 +2,8 @@ import { useLocalSearchParams } from 'expo-router';
 
 import { LocalNaoEncontrado } from '@/components/telas/LocalNaoEncontrado';
 import { TelaMapa } from '@/components/telas/TelaMapa';
-import { plantaDoBloco, useSimulacaoAoVivo, useVagasOcupadas } from '@/dados/ocupacaoAoVivo';
-import { buscarCampus, buscarParceiro, type Bloco, type Campus } from '@/dados/parceiros';
+import { plantaDoBloco, useOcupacaoReal, useSimulacaoAoVivo, useVagasOcupadas } from '@/dados/ocupacaoAoVivo';
+import { blocosDoCampus, buscarCampus, buscarParceiro, type Bloco, type Campus } from '@/dados/parceiros';
 import { rotaDoCampus } from '@/rotas';
 
 export default function TelaBloco() {
@@ -24,6 +24,7 @@ export default function TelaBloco() {
 // Separado da rota para os hooks só rodarem quando o bloco existe
 function MapaDoBloco({ parceiroId, campus, bloco }: { parceiroId: string; campus: Campus; bloco: Bloco }) {
   useSimulacaoAoVivo(campus.id, bloco);
+  useOcupacaoReal(blocosDoCampus(campus));
   const ocupadas = useVagasOcupadas(campus.id, bloco);
 
   return (
