@@ -1,163 +1,132 @@
-# APP Vaga Livre 🅿
+# APP Vaga Livre 🅿️
 
-**Sua vaga, sem voltas.**
+Sistema de estacionamento inteligente que identifica vagas livres e ocupadas a partir de imagens de câmeras, sem sensores físicos em cada vaga.
 
-O APP Vaga Livre é um projeto de estacionamento inteligente. A proposta é usar imagens de câmeras para identificar vagas livres e apresentar essa informação aos motoristas em uma interface visual, sem exigir um sensor dedicado em cada vaga.
+## O que o projeto faz
 
-## Estado atual
+- **Editor de mapas:** cadastre uma foto do estacionamento e marque as vagas desenhando polígonos ao redor de cada uma.
+- **Monitor de vagas:** carregue uma foto da mesma câmera, visualize as vagas marcadas sobre a imagem e veja se cada vaga está livre ou ocupada.
 
-A etapa implementada até agora é o **mapeamento manual das vagas de uma imagem de referência**:
+> ⚠️ **Atenção:** a classificação por IA (saber se a vaga está livre ou ocupada automaticamente) ainda não foi integrada. Por enquanto, o sistema mostra todas as vagas como **livres**, independentemente da imagem. Isso será ajustado em próximas etapas.
 
-- O backend recebe uma imagem e cria um mapa vazio.
-- Uma página provisória exibe a imagem e permite desenhar, ajustar e excluir polígonos de vagas.
-- Os pontos são salvos com coordenadas normalizadas entre 0 e 1.
-- Os mapas ficam em arquivos JSON e as imagens ficam armazenadas localmente.
+---
 
-Em paralelo, a interface definitiva está sendo desenvolvida como um **app Expo** (React Native) na pasta `Frontend/`:
+## 📋 Antes de começar (pré-requisitos)
 
-- Tela inicial com atalho para o último local visitado, salvo no próprio aparelho.
-- Lista de parceiros, campi de cada parceiro e ocupação das vagas por bloco, com busca.
-- Design system com as cores, fontes e componentes definidos no Figma.
+Instale estes programas **antes** de clonar o projeto:
 
-A classificação de vagas como livres ou ocupadas e a atualização em tempo real **ainda não foram implementadas**. O app ainda usa dados provisórios e não está conectado ao backend. O `Frontend/editor.html` é só uma ferramenta de teste do mapeamento.
+| Programa | Para que serve | Onde baixar |
+|----------|---------------|-------------|
+| **Node.js** (com NPM) | Rodar o backend e o frontend | https://nodejs.org/ (escolha a versão LTS) |
+| **Git LFS** | Baixar os modelos de IA (arquivos grandes) | https://git-lfs.com/ |
+| **Python 3** | Rodar scripts de treino e inferência de IA (pasta `treino/`) | https://www.python.org/ |
 
-## Pré-requisitos
+> ⚠️ **Instale o Git LFS antes de clonar.** Se clonar sem ele, os arquivos grandes não baixarão corretamente. Após instalar, feche e reabra o terminal para que o comando `git lfs` funcione.
 
-- Node.js e npm instalados.
-- Uma imagem JPG ou PNG de um estacionamento para cadastrar como referência.
-- Acesso a um terminal na raiz do projeto.
-- Para testar o app: o aplicativo **Expo Go** no celular (Android ou iOS) ou um navegador.
+---
 
-Não é necessário instalar PostgreSQL nesta etapa.
+## 🚀 Como rodar o projeto (passo a passo)
 
-## Instalação
+### 1. Baixar o projeto
 
-Clone o repositório ou baixe seus arquivos. No terminal, entre na pasta raiz do projeto — a pasta que contém `package.json` e `src/`, não a pasta `Frontend/` — e instale as dependências do backend:
+Abra um terminal (PowerShell no Windows, ou o terminal integrado do VS Code com `Ctrl + \``) e rode:
 
-```bat
+```powershell
+git clone https://github.com/EnzoRZequim/PI---Monitor-de-Vagas.git
+cd PI---Monitor-de-Vagas
+```
+
+### 2. Baixar os modelos de IA (Git LFS)
+
+Como os modelos de IA são arquivos grandes, eles não vêm direto no clone. Após clonar, rode:
+
+```powershell
+git lfs pull
+```
+
+Isso vai baixar os arquivos de modelo (`.pt` e `.onnx`) para a pasta raiz e para `data/models/`.
+
+### 3. Rodar o backend
+
+Abra um terminal na **raiz do projeto** (onde está o arquivo `package.json`) e rode:
+
+```powershell
 npm install
+npm run dev
 ```
 
-Confira se o TypeScript não aponta erros:
+O backend ficará disponível em:
 
-```bat
-npx tsc --noEmit
-```
+- API: `http://localhost:3000`
+- Status: `http://localhost:3000/saude`
 
-Inicie o backend a partir da **raiz do projeto**:
+Deixe esse terminal aberto.
 
-```bat
-npx tsx src/server.ts
-```
+### 4. Rodar o frontend
 
-Deixe esse terminal aberto. Por padrão, a API ficará em `http://localhost:3000`. Para verificar se está respondendo, abra:
+Abra **outro terminal**, entre na pasta `frontend/` e rode:
 
-```text
-http://localhost:3000/saude
-```
-
-A resposta esperada é `{"status":"ok"}`. Para parar o servidor, pressione `Ctrl+C`.
-
-> Execute o servidor a partir da raiz do projeto: os caminhos de `data/maps`, `data/images` e `Frontend/editor.html` são resolvidos a partir da pasta em que o comando foi iniciado.
-
-## Dados de exemplo
-
-É possível usar **qualquer imagem JPG ou PNG** de uma câmera de estacionamento para testar o editor. O formato COCO e as anotações não são necessários para cadastrar e desenhar um mapa manualmente.
-
-Para usar imagens de exemplo, o dataset [PKLot no Roboflow](https://public.roboflow.com/object-detection/pklot) oferece downloads nas opções `640` e `raw`. Se escolher `640`, baixe as imagens e selecione um arquivo `.jpg` de uma das pastas extraídas. O dataset é opcional: não é necessário incluí-lo no repositório nem importá-lo para o backend. O Roboflow informa licença **CC BY 4.0** e pede atribuição ao trabalho original ao usar o dataset em publicações. [292]
-
-## Cadastrar uma imagem e um mapa
-
-Com o servidor ligado, abra **outro terminal** na raiz do projeto. O cadastro é feito por `POST /mapas`, usando um arquivo JPG ou PNG existente no seu computador.
-
-No Prompt de Comando do Windows (`cmd`):
-
-```bat
-curl.exe -X POST "http://localhost:3000/mapas" -F "ID=estacionamento-01" -F "Nome=Estacionamento 01" -F "Imagem=@CAMINHO_REAL_DA_IMAGEM.jpg"
-```
-
-**Antes de executar**, substitua `CAMINHO_REAL_DA_IMAGEM.jpg` pelo caminho completo de um arquivo real. Por exemplo, se você baixou o PKLot dentro do projeto, localize uma foto com:
-
-```bat
-dir /s /b "PKLot.v2-640.coco\*.jpg"
-```
-
-Copie **uma linha completa** retornada pelo `dir` e coloque-a depois do `@` no comando de cadastro. Mantenha as aspas em torno de `"Imagem=@..."`, especialmente se o caminho tiver espaços. Não execute o texto `CAMINHO_REAL_DA_IMAGEM.jpg` literalmente.
-
-Uma resposta com `"statusCode":201` indica que o mapa foi criado. Um ID já cadastrado é recusado; o cadastro não substitui o mapa anterior. O sistema salva:
-
-```text
-data/
-├── images/
-│   └── estacionamento-01.jpg
-└── maps/
-    └── estacionamento-01.json
-```
-
-A extensão da imagem salva seguirá o formato identificado pelo servidor: `.jpg` ou `.png`.
-
-## Editar as vagas na imagem
-
-1. Abra `http://localhost:3000/editor` no navegador.
-2. No campo de ID, informe o mesmo ID usado no cadastro, por exemplo `estacionamento-01`, e clique em **Carregar mapa**.
-3. Clique em **Nova vaga** e depois nos cantos da vaga sobre a imagem. Marque pelo menos três pontos.
-4. Clique em **Concluir vaga**, informe um nome e clique em **Salvar vagas**.
-5. Para ajustar uma vaga, clique no polígono e arraste seus pontos. Para removê-la, selecione-a e clique em **Excluir selecionada**. Salve novamente para persistir as alterações.
-
-O editor não faz upload: uma imagem precisa ser cadastrada pela API **antes** de abrir seu mapa na tela. Se aparecer “Mapa não encontrado”, confira o ID digitado e se o cadastro retornou `201`.
-
-Para verificar a persistência, abra `http://localhost:3000/mapas/estacionamento-01` ou consulte o arquivo em `data/maps`. A imagem cadastrada também pode ser aberta em `http://localhost:3000/imagens/estacionamento-01.jpg`, ajustando o ID e a extensão conforme o cadastro.
-
-## API disponível
-
-| Método | Rota                | Função                                 |
-| ------ | ------------------- | -------------------------------------- |
-| GET    | `/saude`            | Verifica se a API está respondendo     |
-| POST   | `/mapas`            | Cadastra imagem e cria um mapa vazio   |
-| GET    | `/mapas/:ID`        | Retorna um mapa cadastrado             |
-| PUT    | `/mapas/:ID/vagas`  | Substitui a lista de vagas do mapa     |
-| GET    | `/imagens/:arquivo` | Exibe uma imagem cadastrada            |
-| GET    | `/editor`           | Abre a página provisória de mapeamento |
-
-No `POST /mapas`, envie `multipart/form-data` com os campos `ID`, `Nome` e o arquivo `Imagem`. No `PUT /mapas/:ID/vagas`, envie JSON com uma propriedade `Vagas` contendo a lista completa. Cada vaga deve ter `ID`, `Nome` e pelo menos três `Pontos` com `X` e `Y` entre 0 e 1.
-
-## Executar o app
-
-O app fica na pasta `Frontend/` e tem dependências próprias, separadas das do backend. Nesta etapa ele não precisa do backend ligado. Em um terminal, entre na pasta e instale as dependências:
-
-```bat
-cd Frontend
+```powershell
+cd frontend
 npm install
+npm run dev
 ```
 
-O aviso `npm warn deprecated uuid@7.0.3` e o resumo de vulnerabilidades no final da instalação são esperados: vêm das ferramentas internas do Expo e não impedem o app de rodar. **Não execute `npm audit fix --force`**, pois ele rebaixa o Expo para uma versão antiga e quebra o projeto.
+O frontend ficará disponível em: `http://localhost:5173`
 
-Confira se o TypeScript não aponta erros:
+> O frontend precisa do backend rodando para funcionar. Então sempre inicie o backend primeiro (passo 3) e depois o frontend (passo 4).
 
-```bat
-npx tsc --noEmit
+### 5. Usar o sistema
+
+1. Abra o navegador em `http://localhost:5173`
+2. Na aba **Editor de mapas**, selecione o mapa `teste2` (já vem com 32 vagas marcadas)
+3. Na aba **Monitor de vagas**, selecione o mapa `teste2` e a imagem `estacionamento 2`
+4. Clique em **Analisar** para ver as vagas (por enquanto, todas aparecerão como livres)
+
+---
+
+## ⚠️ Sobre o modelo de IA
+
+O projeto usa Git LFS para gerenciar arquivos grandes (modelos `.pt` e `.onnx`).
+
+- Se você só quer **testar o mapa e a interface**, não precisa do modelo de IA. O sistema funciona sem ele (apenas mostra todas as vagas como livres).
+- Se você for **integrar ou treinar o classificador de IA**, será necessário o Python 3 com o pacote `ultralytics` instalado.
+
+### Scripts de treino e IA (`treino/`)
+
+Os scripts de treinamento, validação e preparação de dados ficam em `treino/`:
+
+- `treino/Classificador/` — preparação e treino do classificador de vagas
+- `treino/Mapeador/` — treino de segmentação, exportação ONNX e validação
+- `treino/ia_mapa/` — serviço SAM (Segment Anything Model) para detecção de vagas
+
+Cada subpasta pode ter seu próprio `.venv` e `requirements.txt`. Para rodar:
+
+```powershell
+# Exemplo: dentro de treino/ia_mapa/
+cd treino\ia_mapa
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 ```
 
-Inicie o servidor de desenvolvimento:
+Os modelos treinados (`.pt`, `.onnx`, `.pth`) são versionados com **Git LFS** e ficam em `data/models/` e `ia_mapa/`.
 
-```bat
-npx expo start
-```
+---
 
-Escaneie o QR code exibido no terminal com o Expo Go (Android) ou com a câmera (iOS). O celular precisa estar na mesma rede Wi-Fi do computador. Para abrir no navegador, pressione `w`. Para parar, pressione `Ctrl+C`.
+## 🗺️ Arquivos de teste já incluídos
 
-> Para adicionar bibliotecas ao app, use `npx expo install <pacote>` em vez de `npm install <pacote>`: o Expo escolhe a versão compatível com o SDK do projeto. Se o `npm install` voltar a mostrar avisos `ERESOLVE`, rode `npx expo install --fix`.
+O repositório já vem com arquivos prontos para você testar sem precisar cadastrar nada:
 
-## Organização desta etapa
+- **Mapa:** `teste2` — 32 vagas já mapeadas
+- **Imagem:** `estacionamento 2` — foto de referência do estacionamento
 
-- `src/`: backend Node.js, TypeScript e Express.
-- `Frontend/`: app Expo (React Native e TypeScript) com a interface definitiva.
-  - `Frontend/src/app/`: telas do app; cada arquivo é uma rota do Expo Router.
-  - `Frontend/src/components/`: componentes do design system, separados por função em `base/`, `botoes/`, `campos/`, `cartoes/`, `navegacao/` e `telas/`.
-  - `Frontend/src/dados/`: dados provisórios dos parceiros e o último local visitado.
-  - `Frontend/src/theme.ts`: cores, fontes, espaçamentos e tipografia vindos do Figma.
-- `Frontend/editor.html`: editor provisório para testar os polígonos.
-- `data/maps/`: mapas cadastrados em JSON.
-- `data/images/`: imagens de referência cadastradas.
+Basta selecionar esses arquivos na interface para começar a usar.
 
-O backend e o frontend são responsabilidades separadas, cada um com seu próprio `package.json`. O `editor.html` existe apenas para validar o fluxo de mapeamento, e o app ainda será conectado à API.
+---
+
+## 📚 Documentação detalhada
+
+Para arquitetura, estrutura de pastas, rotas da API detalhada, uso da interface e próximos passos, consulte:
+
+👉 [`docs/estrutura_projeto.md`](docs/estrutura_projeto.md)
