@@ -16,23 +16,40 @@ import { cores, espaco, fontes, tamanhoFonte, tipografia } from '@/theme';
 // No celular o formulário ocupa a largura da tela; em telas maiores fica centralizado com esta largura
 const LARGURA_FORMULARIO = 560;
 
-type Campo = 'nome' | 'cnpj' | 'email' | 'estabelecimentos' | 'cameras';
+type Campo = 'nome' | 'cnpj' | 'email' | 'senha' | 'numcontato' | 'nomecontato' | 'endereco' | 'cameras';
 
 // Algo@algo.algo, sem espaços: confere só o formato; se o e-mail existe, só a resposta da equipe dirá
 const FORMATO_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Pedido para virar parceiro ("Tornar-se Parceiro" e "Tudo certo" no Figma)
+const SENHA_MINIMA = 8;
+
+// Telefone com DDD enquanto digita: (11) 1234-5678 (fixo) ou (11) 91234-5678 (celular)
+function formatarTelefone(texto: string) {
+  const d = texto.replace(/\D/g, '').slice(0, 11);
+  if (d.length <= 2) return d.length ? `(${d}` : '';
+  const meio = d.length === 11 ? 7 : 6;
+  if (d.length <= meio) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  return `(${d.slice(0, 2)}) ${d.slice(2, meio)}-${d.slice(meio)}`;
+}
+
+// Pedido para virar parceiro ("Tornar-se Parceiro")
 export default function TelaTornarSeParceiro() {
   const telaPequena = useTelaPequena();
   const insets = useSafeAreaInsets();
   const campoCnpj = useRef<TextInput>(null);
   const campoEmail = useRef<TextInput>(null);
-  const campoEstabelecimentos = useRef<TextInput>(null);
+  const campoSenha = useRef<TextInput>(null);
+  const campoNomeContato = useRef<TextInput>(null);
+  const campoNumContato = useRef<TextInput>(null);
+  const campoEndereco = useRef<TextInput>(null);
 
   const [nome, setNome] = useState('');
   const [cnpj, setCnpj] = useState('');
   const [email, setEmail] = useState('');
-  const [estabelecimentos, setEstabelecimentos] = useState('');
+  const [senha, setSenha] = useState('');
+  const [nomeContato, setNomeContato] = useState('');
+  const [numContato, setNumContato] = useState('');
+  const [endereco, setEndereco] = useState('');
   const [possuiCameras, setPossuiCameras] = useState<boolean | null>(null);
   const [erros, setErros] = useState<Partial<Record<Campo, string>>>({});
   const [enviado, setEnviado] = useState(false);
@@ -44,15 +61,19 @@ export default function TelaTornarSeParceiro() {
 
   function enviar() {
     const novos: Partial<Record<Campo, string>> = {};
-    const quantidade = Number(estabelecimentos);
+    const digitosTelefone = numContato.replace(/\D/g, '').length;
 
     if (!nome.trim()) novos.nome = 'Informe o nome do estabelecimento.';
     if (!limparCnpj(cnpj)) novos.cnpj = 'Informe o CNPJ.';
     else if (!cnpjValido(cnpj)) novos.cnpj = 'CNPJ inválido. Confira os números digitados.';
     if (!email.trim()) novos.email = 'Informe um e-mail para contato.';
     else if (!FORMATO_EMAIL.test(email.trim())) novos.email = 'E-mail inválido. Ex: contato@empresa.com.br';
-    if (!estabelecimentos) novos.estabelecimentos = 'Informe a quantidade de estabelecimentos.';
-    else if (!Number.isInteger(quantidade) || quantidade < 1) novos.estabelecimentos = 'Informe ao menos 1 estabelecimento.';
+    if (!senha) novos.senha = 'Crie uma senha.';
+    else if (senha.length < SENHA_MINIMA) novos.senha = `A senha precisa ter ao menos ${SENHA_MINIMA} caracteres.`;
+    if (!nomeContato.trim()) novos.nomecontato = 'Informe o nome do responsável.';
+    if (!digitosTelefone) novos.numcontato = 'Informe um telefone para contato.';
+    else if (digitosTelefone < 10) novos.numcontato = 'Telefone incompleto. Inclua o DDD.';
+    if (!endereco.trim()) novos.endereco = 'Informe o endereço do estacionamento.';
     if (possuiCameras === null) novos.cameras = 'Informe se há câmeras nas vagas.';
 
     setErros(novos);
@@ -60,7 +81,6 @@ export default function TelaTornarSeParceiro() {
     if (Object.keys(novos).length === 0) setEnviado(true);
   }
 
-  // Figma: 50px acima e abaixo; o formulário começa no topo e a confirmação fica centralizada
   const paddingCelular = telaPequena && [
     {
       paddingHorizontal: espaco[4],
@@ -156,22 +176,83 @@ export default function TelaTornarSeParceiro() {
                     textContentType="emailAddress"
                     returnKeyType="next"
                     submitBehavior="submit"
-                    onSubmitEditing={() => campoEstabelecimentos.current?.focus()}
+                    onSubmitEditing={() => campoSenha.current?.focus()}
                   />
                 </Pergunta>
 
-                <Pergunta rotulo="Quantidade de estabelecimentos" erro={erros.estabelecimentos}>
+                <Pergunta rotulo="Senha" erro={erros.senha}>
                   <CampoTexto
-                    ref={campoEstabelecimentos}
-                    value={estabelecimentos}
+                    ref={campoSenha}
+                    value={senha}
                     onChangeText={(texto) => {
-                      setEstabelecimentos(texto.replace(/\D/g, ''));
-                      limparErro('estabelecimentos');
+                      setSenha(texto);
+                      limparErro('senha');
                     }}
-                    placeholder="Ex: 2"
-                    accessibilityLabel="Quantidade de estabelecimentos"
-                    keyboardType="number-pad"
-                    maxLength={4}
+                    placeholder={`Mínimo de ${SENHA_MINIMA} caracteres`}
+                    accessibilityLabel="Senha"
+                    secureTextEntry
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    // Senha nova: o navegador e o celular oferecem para gerar e guardar
+                    autoComplete="new-password"
+                    textContentType="newPassword"
+                    returnKeyType="next"
+                    submitBehavior="submit"
+                    onSubmitEditing={() => campoNomeContato.current?.focus()}
+                  />
+                </Pergunta>
+
+                <Pergunta rotulo="Nome do responsável" erro={erros.nomecontato}>
+                  <CampoTexto
+                    ref={campoNomeContato}
+                    value={nomeContato}
+                    onChangeText={(texto) => {
+                      setNomeContato(texto);
+                      limparErro('nomecontato');
+                    }}
+                    placeholder="Ex: Maria Silva"
+                    accessibilityLabel="Nome do responsável"
+                    autoCapitalize="words"
+                    autoComplete="name"
+                    textContentType="name"
+                    returnKeyType="next"
+                    submitBehavior="submit"
+                    onSubmitEditing={() => campoNumContato.current?.focus()}
+                  />
+                </Pergunta>
+
+                <Pergunta rotulo="Telefone para contato" erro={erros.numcontato}>
+                  <CampoTexto
+                    ref={campoNumContato}
+                    value={numContato}
+                    onChangeText={(texto) => {
+                      setNumContato(formatarTelefone(texto));
+                      limparErro('numcontato');
+                    }}
+                    placeholder="Ex: (11) 91234-5678"
+                    accessibilityLabel="Telefone para contato"
+                    keyboardType="phone-pad"
+                    autoComplete="tel"
+                    textContentType="telephoneNumber"
+                    maxLength={15}
+                    returnKeyType="next"
+                    submitBehavior="submit"
+                    onSubmitEditing={() => campoEndereco.current?.focus()}
+                  />
+                </Pergunta>
+
+                <Pergunta rotulo="Endereço" erro={erros.endereco}>
+                  <CampoTexto
+                    ref={campoEndereco}
+                    value={endereco}
+                    onChangeText={(texto) => {
+                      setEndereco(texto);
+                      limparErro('endereco');
+                    }}
+                    placeholder="Rua, número, bairro, cidade"
+                    accessibilityLabel="Endereço"
+                    autoComplete="street-address"
+                    textContentType="fullStreetAddress"
                   />
                 </Pergunta>
 
