@@ -17,6 +17,8 @@ Sistema de estacionamento inteligente que identifica vagas livres e ocupadas a p
 
 > ⚠️ **Use a branch `feat/integracao-ia`.** O app Expo (`Frontend/`) **não existe na `master`**: quem clona a `master` recebe só o editor web e não encontra o app. Quando esta branch for mesclada na `master`, passe a usar a `master`.
 
+👉 **Quer só rodar?** O passo a passo curto está em [`Frontend/README.md`](Frontend/README.md#passo-a-passo-para-rodar).
+
 ---
 
 ## 📋 Pré-requisitos
