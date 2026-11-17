@@ -12,6 +12,7 @@
   --vg-verde: #2f9e68;
   --vg-amarelo: #d79a16;
   --vg-vermelho: #b23a3a;
+  --vg-erro: #ff9b9b;
 
   min-height: 100vh;
   background: var(--vg-fundo);
@@ -171,3 +172,27 @@
 .vg-ponto { border-radius: 3px; display: inline-block; height: 12px; width: 12px; }
 
 .vg-aviso { color: var(--vg-texto-sec); font-size: 14px; }
+
+.vg-formulario { display: flex; flex-direction: column; gap: 14px; }
+
+.vg-campo-grupo { display: flex; flex-direction: column; gap: 6px; }
+
+.vg-rotulo { font-size: 13px; font-weight: 600; color: var(--vg-texto-sec); }
+
+.vg-campo--erro { border-color: var(--vg-erro); }
+
+.vg-dica { font-size: 11px; color: var(--vg-legenda); }
+
+.vg-erro { font-size: 12px; color: var(--vg-erro); }
+
+.vg-erro-geral {
+  background: rgba(178, 58, 58, 0.18);
+  border: 1px solid var(--vg-erro);
+  border-radius: 8px;
+  color: var(--vg-erro);
+  font-size: 13px;
+  margin: 0;
+  padding: 10px 12px;
+}
+
+.vg-botao:disabled { cursor: not-allowed; opacity: 0.6; }

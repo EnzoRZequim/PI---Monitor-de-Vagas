@@ -97,12 +97,60 @@ type BotaoProps = {
   children: ReactNode;
   aoClicar: () => void;
   secundario?: boolean;
+  tipo?: "button" | "submit";
+  desabilitado?: boolean;
 };
 
-export function Botao({ children, aoClicar, secundario }: BotaoProps) {
+export function Botao({ children, aoClicar, secundario, tipo = "button", desabilitado }: BotaoProps) {
   return (
-    <button className={secundario ? "vg-botao vg-botao--secundario" : "vg-botao"} onClick={aoClicar}>
+    <button
+      className={secundario ? "vg-botao vg-botao--secundario" : "vg-botao"}
+      type={tipo}
+      disabled={desabilitado}
+      onClick={tipo === "submit" ? undefined : aoClicar}
+    >
       {children}
     </button>
+  );
+}
+
+type CampoProps = {
+  rotulo: string;
+  valor: string;
+  aoMudar: (valor: string) => void;
+  tipo?: "text" | "email" | "password" | "tel";
+  exemplo?: string;
+  dica?: string;
+  erro?: string;
+  modo?: "text" | "numeric" | "tel";
+};
+
+export function Campo({ rotulo, valor, aoMudar, tipo = "text", exemplo, dica, erro, modo }: CampoProps) {
+  const id = "campo-" + rotulo.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
+  return (
+    <div className="vg-campo-grupo">
+      <label className="vg-rotulo" htmlFor={id}>
+        {rotulo}
+      </label>
+      <input
+        id={id}
+        className={erro ? "vg-campo vg-campo--erro" : "vg-campo"}
+        type={tipo}
+        value={valor}
+        placeholder={exemplo}
+        inputMode={modo}
+        aria-invalid={erro ? true : undefined}
+        aria-describedby={erro ? id + "-erro" : undefined}
+        onChange={(evento) => aoMudar(evento.target.value)}
+      />
+      {erro ? (
+        <span className="vg-erro" id={id + "-erro"}>
+          {erro}
+        </span>
+      ) : (
+        dica && <span className="vg-dica">{dica}</span>
+      )}
+    </div>
   );
 }

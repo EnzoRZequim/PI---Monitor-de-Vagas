@@ -29,3 +29,13 @@ export type ResumoLocal = {
 };
 
 export type Nivel = "alta" | "media" | "baixa";
+
+export type CadastroParceiro = {
+  Email: string;
+  Senha: string;
+  NomeEmpresa: string;
+  Cnpj: string;
+  Contato: string;
+  NomeContato: string;
+  Endereco: string;
+};

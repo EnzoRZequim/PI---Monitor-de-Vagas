@@ -1,6 +1,8 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import App from "../App";
 import TelaBlocos from "./TelaBlocos";
+import TelaCadastroEnviado from "./TelaCadastroEnviado";
+import TelaCadastroParceiro from "./TelaCadastroParceiro";
 import TelaEmBreve from "./TelaEmBreve";
 import TelaInicio from "./TelaInicio";
 import TelaLocais from "./TelaLocais";
@@ -15,7 +17,10 @@ export default function AppVagas() {
         <Route path="/locais/:localID" element={<TelaBlocos />} />
         <Route path="/locais/:localID/blocos/:blocoID" element={<TelaMapaBloco />} />
 
-        {/* Área do parceiro: telas da próxima etapa */}
+        <Route path="/parceiro/cadastro" element={<TelaCadastroParceiro />} />
+        <Route path="/parceiro/sucesso" element={<TelaCadastroEnviado />} />
+
+        {/* Área do parceiro (login e painel): telas da próxima etapa */}
         <Route path="/parceiro/*" element={<TelaEmBreve />} />
 
         {/* Ferramenta interna já existente (editor de vagas e monitor) */}

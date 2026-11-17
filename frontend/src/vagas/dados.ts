@@ -8,11 +8,12 @@
  *   GET /locais                      -> ResumoLocal[]
  *   GET /locais/:localID             -> Local (com blocos e contagens)
  *   GET /locais/:localID/blocos/:id  -> Bloco (com a lista de vagas)
+ *   POST /parceiros                  -> cadastro de um novo parceiro
  *
  * A assinatura das funções já é assíncrona justamente para que a troca não
  * exija mudanças nas telas.
  */
-import type { Bloco, Local, Nivel, ResumoLocal, VagaMapa } from "./tipos";
+import type { Bloco, CadastroParceiro, Local, Nivel, ResumoLocal, VagaMapa } from "./tipos";
 
 const ATRASO_SIMULADO = 120;
 
@@ -117,4 +118,27 @@ export function nivelDeVagas(livres: number, total: number): Nivel {
   if (proporcao >= 0.5) return "alta";
   if (proporcao >= 0.25) return "media";
   return "baixa";
+}
+
+/**
+ * Envia a solicitacao de cadastro de parceiro.
+ *
+ * Ainda nao existe rota no backend: por enquanto apenas registra no console e
+ * responde com sucesso. Ao criar o endpoint, troque o corpo por:
+ *
+ *   const resposta = await fetch("/parceiros", {
+ *     method: "POST",
+ *     headers: { "Content-Type": "application/json" },
+ *     body: JSON.stringify(dados)
+ *   });
+ *   if (!resposta.ok) throw new Error("Falha ao enviar o cadastro.");
+ *
+ * A senha nunca deve ser gravada em texto puro: o hash e responsabilidade do backend.
+ */
+export function enviarCadastroParceiro(dados: CadastroParceiro): Promise<void> {
+  const { Senha, ...semSenha } = dados;
+  void Senha;
+  console.info("Cadastro de parceiro (exemplo, nao enviado):", semSenha);
+
+  return responder(undefined);
 }
