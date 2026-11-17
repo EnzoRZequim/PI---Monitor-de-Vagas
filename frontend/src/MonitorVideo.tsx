@@ -263,7 +263,7 @@ export default function MonitorVideo() {
 
   return (
     <main className="app">
-      <h1>Monitor de Vagas — Vídeo</h1>
+      <h1>Monitor de vídeo</h1>
 
       <nav className="abas">
         <button className="aba" onClick={() => {}}>Monitor de vídeo</button>

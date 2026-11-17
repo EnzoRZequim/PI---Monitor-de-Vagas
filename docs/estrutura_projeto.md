@@ -1,6 +1,6 @@
 # Estrutura do Projeto
 
-Este documento descreve a organização das pastas e arquivos do projeto **PI — Monitor de Vagas**, detalhando responsabilidades, rotas da API e próximos passos.
+Este documento descreve a organização das pastas e arquivos do projeto **Vaga Livre**, detalhando responsabilidades, rotas da API e próximos passos.
 
 ## Visão geral
 
@@ -123,7 +123,9 @@ Documentação do projeto. Este arquivo explica pastas e responsabilidades.
 
 ### `frontend/`
 
-Interface web em React + Vite.
+Interface web em React + Vite. Reúne duas frentes servidas pelo mesmo projeto:
+o **app público** (telas do usuário final, em `src/vagas/`) e as **ferramentas
+internas** de mapeamento e monitoramento (arquivos na raiz de `src/`).
 
 ```text
 frontend/
@@ -131,18 +133,65 @@ frontend/
 ├─ vite.config.ts
 ├─ index.html
 ├─ public/
+│  ├─ favicon.svg
+│  ├─ favicon-32.png
+│  ├─ favicon-64.png
+│  ├─ apple-touch-icon.png
+│  └─ logo-vaga-livre.svg
 └─ src/
+   ├─ main.tsx
    ├─ App.tsx
    ├─ EditorVagas.tsx
+   ├─ MonitorVagas.tsx
+   ├─ MonitorVideo.tsx
    ├─ api.ts
-   ├─ main.tsx
-   └─ tipos.ts
+   ├─ tipos.ts
+   └─ vagas/
+      ├─ AppVagas.tsx
+      ├─ TelaInicio.tsx
+      ├─ TelaLocais.tsx
+      ├─ TelaBlocos.tsx
+      ├─ TelaMapaBloco.tsx
+      ├─ TelaEmBreve.tsx
+      ├─ dados.ts
+      ├─ tipos.ts
+      └─ tema.css
 ```
 
-- `App.tsx`: tela principal, seleção/criação de mapas e edição de vagas.
+- `main.tsx`: ponto de entrada da aplicação; monta o roteador.
+- `App.tsx`: ferramentas internas, com abas de editor de mapas, monitor de vagas e monitor de vídeo.
 - `EditorVagas.tsx`: renderiza imagem e vagas, permite marcar e mover pontos.
+- `MonitorVagas.tsx`: analisa a ocupação a partir de uma imagem enviada.
+- `MonitorVideo.tsx`: monitoramento contínuo por vídeo, consumindo o WebSocket do backend.
 - `api.ts`: chamadas à API do backend.
-- `tipos.ts`: tipos TypeScript do frontend.
+- `tipos.ts`: tipos compartilhados com o backend (mapas, vagas, ocupação).
+
+`public/` guarda os arquivos servidos na raiz do site: o favicon em SVG, as versões
+PNG usadas como alternativa, o ícone para telas de celular e o símbolo da marca
+exibido na tela inicial.
+
+#### `frontend/src/vagas/`
+
+Telas do app público, baseadas no protótipo mobile. Cada tela fica em um arquivo
+próprio e o roteamento usa `react-router-dom`.
+
+| Rota | Tela |
+| ---- | ---- |
+| `/` | Início, com a marca e os atalhos principais |
+| `/locais` | Lista de locais parceiros |
+| `/locais/:localID` | Blocos do local escolhido |
+| `/locais/:localID/blocos/:blocoID` | Mapa de vagas do bloco |
+| `/parceiro/*` | Reservado para a área do parceiro |
+| `/editor` | Ferramentas internas (`App.tsx`) |
+
+- `AppVagas.tsx`: declara as rotas acima.
+- `Tela*.tsx`: uma tela por arquivo, sem estado global.
+- `dados.ts`: camada de dados do app público. Hoje devolve dados de exemplo e
+  concentra, em um único arquivo, o ponto de troca pelas rotas reais da API
+  (`/locais`, `/locais/:id` e `/locais/:id/blocos/:id`), que ainda não existem no backend.
+- `tipos.ts`: tipos do app público (`Local`, `Bloco`, `VagaMapa`), distintos dos
+  tipos de `src/tipos.ts`, que espelham o backend.
+- `tema.css`: tokens visuais e classes `vg-*` usadas pelas telas.
 
 Durante `npm run dev`, sobe em `http://localhost:5173`. `node_modules/` e `dist/` são ignoradas pelo Git.
 

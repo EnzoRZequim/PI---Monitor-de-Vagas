@@ -1,0 +1,108 @@
+import type { ReactNode } from "react";
+import { nivelDeVagas } from "./dados";
+import "./tema.css";
+
+type TelaProps = {
+  children: ReactNode;
+  larga?: boolean;
+};
+
+export function Tela({ children, larga }: TelaProps) {
+  return (
+    <div className="vg-app">
+      <div className={larga ? "vg-tela vg-tela--larga" : "vg-tela"}>{children}</div>
+    </div>
+  );
+}
+
+type TopoProps = {
+  titulo: string;
+  subtitulo?: string;
+  aoVoltar?: () => void;
+};
+
+export function Topo({ titulo, subtitulo, aoVoltar }: TopoProps) {
+  return (
+    <header>
+      {aoVoltar && (
+        <button className="vg-voltar" onClick={aoVoltar}>
+          ← Voltar
+        </button>
+      )}
+      <h1 className="vg-titulo">{titulo}</h1>
+      {subtitulo && <p className="vg-subtitulo">{subtitulo}</p>}
+      <hr className="vg-divisor" style={{ marginTop: 12 }} />
+    </header>
+  );
+}
+
+type BuscaProps = {
+  valor: string;
+  aoMudar: (valor: string) => void;
+  rotulo: string;
+};
+
+export function Busca({ valor, aoMudar, rotulo }: BuscaProps) {
+  return (
+    <input
+      className="vg-campo"
+      aria-label={rotulo}
+      placeholder={rotulo}
+      value={valor}
+      onChange={(evento) => aoMudar(evento.target.value)}
+    />
+  );
+}
+
+type SeloProps = {
+  livres: number;
+  total: number;
+};
+
+export function Selo({ livres, total }: SeloProps) {
+  return (
+    <span className={`vg-badge vg-badge--${nivelDeVagas(livres, total)}`}>
+      {livres}/{total}
+    </span>
+  );
+}
+
+type ItemProps = {
+  nome: string;
+  descricao?: string;
+  direita?: ReactNode;
+  aoClicar: () => void;
+};
+
+export function Item({ nome, descricao, direita, aoClicar }: ItemProps) {
+  return (
+    <li>
+      <button className="vg-item" onClick={aoClicar}>
+        <span>
+          <span className="vg-item-nome">{nome}</span>
+          {descricao && (
+            <>
+              <br />
+              <span className="vg-item-descricao">{descricao}</span>
+            </>
+          )}
+        </span>
+        {direita}
+      </button>
+    </li>
+  );
+}
+
+type BotaoProps = {
+  children: ReactNode;
+  aoClicar: () => void;
+  secundario?: boolean;
+};
+
+export function Botao({ children, aoClicar, secundario }: BotaoProps) {
+  return (
+    <button className={secundario ? "vg-botao vg-botao--secundario" : "vg-botao"} onClick={aoClicar}>
+      {children}
+    </button>
+  );
+}

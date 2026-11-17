@@ -1,4 +1,4 @@
-# APP Vaga Livre 🅿️
+# Vaga Livre 🅿️
 
 Sistema de estacionamento inteligente que identifica vagas livres e ocupadas a partir de imagens de câmeras, sem sensores físicos em cada vaga.
 
@@ -74,14 +74,22 @@ npm run dev
 
 O frontend ficará disponível em: `http://localhost:5173`
 
-> O frontend precisa do backend rodando para funcionar. Então sempre inicie o backend primeiro (passo 3) e depois o frontend (passo 4).
+> As ferramentas internas (editor e monitores) precisam do backend rodando. Então, para usá-las, inicie o backend primeiro (passo 3) e depois o frontend (passo 4). O app público ainda usa dados de exemplo e abre sem o backend.
 
 ### 5. Usar o sistema
 
-1. Abra o navegador em `http://localhost:5173`
-2. Na aba **Editor de mapas**, selecione o mapa `teste2` (já vem com 32 vagas marcadas)
-3. Na aba **Monitor de vagas**, selecione o mapa `teste2` e a imagem `estacionamento 2`
-4. Clique em **Analisar** para ver as vagas (por enquanto, todas aparecerão como livres)
+O frontend tem duas entradas.
+
+**App público** — `http://localhost:5173`
+
+Tela inicial, lista de locais parceiros, blocos de cada local e o mapa de vagas do
+bloco. Os dados ainda são de exemplo, então essa parte abre sem o backend.
+
+**Ferramentas internas** — `http://localhost:5173/editor`
+
+1. Na aba **Editor de mapas**, selecione o mapa `teste2` (já vem com 32 vagas marcadas)
+2. Na aba **Monitor de vagas**, selecione o mapa `teste2` e a imagem `estacionamento 2`
+3. Clique em **Analisar** para ver as vagas (por enquanto, todas aparecerão como livres)
 
 ---
 

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <title>Vaga Livre</title>
+  <path d="M256 56c-83 0-150 67-150 150 0 95 118 211 143 234a10 10 0 0 0 14 0c25-23 143-139 143-234 0-83-67-150-150-150z" fill="#4aa3f0"/>
+  <circle cx="256" cy="201" r="84" fill="#0f1c2e"/>
+  <path d="M206 170 L228 232 L250 170" fill="none" stroke="#e8eef6" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M272 170 L272 232 L306 232" fill="none" stroke="#e8eef6" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

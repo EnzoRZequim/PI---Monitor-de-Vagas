@@ -288,7 +288,7 @@ export default function App() {
 
   return (
     <main className="app">
-      <h1>APP Vaga Livre</h1>
+      <h1>Vaga Livre — Ferramentas internas</h1>
 
       <nav className="abas">
         <button
