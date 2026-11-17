@@ -24,6 +24,7 @@ cd PI---Monitor-de-Vagas
 ```powershell
 cd Frontend
 npm install
+npm i expo 
 npx expo start
 ```
 
