@@ -1,3 +1,46 @@
-data/
+# Dependências instaladas pelo NPM
 node_modules/
+backend/node_modules/
+
+
+# Arquivos JavaScript e declarações gerados pelo TypeScript
+dist/
+
+
+# Dados de execução: imagens, mapas, resultados e arquivos temporários
+data/
+
+
+# Dataset local utilizado em testes e estudos
 PKLot.v2-640.coco/
+
+
+# Variáveis locais e possíveis segredos
+.env
+.env.*
+!.env.example
+
+
+# Arquivos de log
+*.log
+
+
+# Graphify: Cria grafos para IA interpretar
+graphify-out/
+.graphify-out/
+
+# Dados de treino (pasta existe localmente, mas conteúdo não sobe ao Git)
+treino/dados/
+
+# Resultados de treino e validação (imagens, curvas, matriz de confusão, predictions.json)
+treino/Mapeador/runs/
+
+# Ambientes virtuais Python (raiz e subpastas)
+.venv/
+**/.venv/
+**/__pycache__/
+*.pyc
+
+# Modelos de IA grandes são gerenciados pelo Git LFS
+# data/models/ é exceção ao ignore de data/ para versionar via LFS
+!data/models/

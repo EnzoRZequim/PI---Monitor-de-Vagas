@@ -4,6 +4,10 @@
 // Se esses mapas mudarem no backend, este arquivo precisa ser atualizado.
 export type VagaDoBackend = { ID: string; Nome: string };
 
+// IDs dos mapas no backend (data/maps/<ID>.json)
+export const MAPA_TESTE = 'Teste';
+export const MAPA_VIDEO = 'Video';
+
 export const VAGAS_TESTE: VagaDoBackend[] = [
   { ID: 'vaga-c9ef3a4a-ecba-47b2-86cd-35633a966382', Nome: 'A1' },
   { ID: 'vaga-6c158e6a-fc4f-48e4-8ee7-679ec90706a5', Nome: 'A2' },
