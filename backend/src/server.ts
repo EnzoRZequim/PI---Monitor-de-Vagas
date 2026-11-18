@@ -4,6 +4,8 @@ import { createServer } from "node:http";
 
 import { ensureDirectories } from "./config/ensureDirectories";
 import { IMAGES_DIR, TEMP_DIR } from "./config/paths";
+import authRouter, { origemFrontend } from "./routes/auth";
+import parceriasRouter from "./routes/parcerias";
 import mapasRouter from "./routes/mapas";
 import { carregarClassificador } from "./services/ClassificadorVagas";
 import { monitorRouter, anexarWebSocket } from "./routes/monitor";
@@ -12,6 +14,10 @@ import { iniciarMonitorDemo } from "./services/MonitorDemo";
 const app = express();
 
 const porta = 3000;
+
+const corsAutenticacao = cors({ origin: origemFrontend ?? false, credentials: true });
+app.use("/auth", corsAutenticacao, express.json(), authRouter);
+app.use("/parcerias", corsAutenticacao, express.json(), parceriasRouter);
 
 app.use(cors());
 app.use(express.json());

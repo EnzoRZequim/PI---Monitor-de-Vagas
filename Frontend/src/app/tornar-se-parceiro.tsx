@@ -9,6 +9,7 @@ import { BotaoIcone } from '@/components/botoes/BotaoIcone';
 import { Cabecalho } from '@/components/navegacao/Cabecalho';
 import { CampoTexto } from '@/components/campos/CampoTexto';
 import { cnpjValido, formatarCnpj, limparCnpj } from '@/cnpj';
+import { solicitarParceria } from '@/dados/api';
 import { useTelaPequena } from '@/hooks/useTelaPequena';
 import { voltar } from '@/rotas';
 import { cores, espaco, fontes, tamanhoFonte, tipografia } from '@/theme';
@@ -53,13 +54,18 @@ export default function TelaTornarSeParceiro() {
   const [possuiCameras, setPossuiCameras] = useState<boolean | null>(null);
   const [erros, setErros] = useState<Partial<Record<Campo, string>>>({});
   const [enviado, setEnviado] = useState(false);
+  const [ocupado, setOcupado] = useState(false);
+  const [erroEnvio, setErroEnvio] = useState('');
+  const enviando = useRef(false);
 
   // Apaga o erro do campo assim que ele é alterado
   function limparErro(campo: Campo) {
     setErros(({ [campo]: _, ...resto }) => resto);
   }
 
-  function enviar() {
+  async function enviar() {
+    if (enviando.current) return;
+    setErroEnvio('');
     const novos: Partial<Record<Campo, string>> = {};
     const digitosTelefone = numContato.replace(/\D/g, '').length;
 
@@ -77,8 +83,24 @@ export default function TelaTornarSeParceiro() {
     if (possuiCameras === null) novos.cameras = 'Informe se há câmeras nas vagas.';
 
     setErros(novos);
-    // Sem envio de verdade até o backend ter uma rota para os pedidos de parceria
-    if (Object.keys(novos).length === 0) setEnviado(true);
+    if (Object.keys(novos).length || possuiCameras === null) return;
+
+    enviando.current = true;
+    setOcupado(true);
+    try {
+      await solicitarParceria({
+        nome: nome.trim(), cnpj: limparCnpj(cnpj), email: email.trim(),
+        senha, nomeContato: nomeContato.trim(), telefone: numContato,
+        endereco: endereco.trim(), possuiCameras,
+      });
+      setSenha('');
+      setEnviado(true);
+    } catch (erro) {
+      setErroEnvio(erro instanceof Error ? erro.message : 'Não foi possível enviar a solicitação.');
+    } finally {
+      enviando.current = false;
+      setOcupado(false);
+    }
   }
 
   const paddingCelular = telaPequena && [
@@ -277,11 +299,12 @@ export default function TelaTornarSeParceiro() {
                 </Pergunta>
               </View>
 
+              {erroEnvio ? <Text style={styles.erro} accessibilityRole="alert">{erroEnvio}</Text> : null}
               <View style={[styles.divisor, telaPequena && celular.separado]} />
 
               <View style={[styles.botoes, telaPequena && celular.separado]}>
                 <BotaoIcone tipo="secundario" titulo="Voltar" icone="rotate-ccw" onPress={() => voltar('/')} />
-                <BotaoIcone titulo="Enviar" icone="send" onPress={enviar} />
+                <BotaoIcone titulo={ocupado ? "Enviando..." : "Enviar"} icone="send" onPress={enviar} />
               </View>
             </View>
           )}

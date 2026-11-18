@@ -1,9 +1,10 @@
 import { Feather } from '@expo/vector-icons';
 import { router, type Href } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BarraNavegacao } from '@/components/navegacao/BarraNavegacao';
+import { encerrarSessao } from '@/dados/autenticacao';
 import { cores, espaco, fontes, tipografia } from '@/theme';
 
 export type SecaoParceiro = 'inicio' | 'locais' | 'dados';
@@ -21,15 +22,23 @@ const ITENS: Item[] = [
   { titulo: 'Início', icone: 'home', secao: 'inicio', rota: '/area-parceiro' },
   { titulo: 'Locais', icone: 'grid', secao: 'locais', rota: '/area-parceiro/locais' },
   { titulo: 'Dados', icone: 'database', secao: 'dados', rota: '/area-parceiro/dados' },
-  // Sem autenticação: sair só volta para a tela inicial
   { titulo: 'Sair', icone: 'log-out', rota: '/', sair: true },
 ];
 
-function abrir(item: Item) {
+async function abrir(item: Item) {
   if (!item.rota) return;
-  // Ao sair, troca o histórico para o "voltar" do navegador não reabrir a área do parceiro
-  if (item.sair) router.replace(item.rota);
-  else router.navigate(item.rota);
+  if (!item.sair) {
+    router.navigate(item.rota);
+    return;
+  }
+  try {
+    await encerrarSessao();
+    router.replace(item.rota);
+  } catch {
+    const mensagem = 'Não foi possível sair. Tente novamente.';
+    if (Platform.OS === 'web') globalThis.alert(mensagem);
+    else Alert.alert(mensagem);
+  }
 }
 
 // Navegação da área do parceiro no Cabecalho do desktop

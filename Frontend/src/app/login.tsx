@@ -1,11 +1,12 @@
 import { router, Stack } from 'expo-router';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { KeyboardAvoidingView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BotaoIcone } from '@/components/botoes/BotaoIcone';
 import { Cabecalho } from '@/components/navegacao/Cabecalho';
 import { CampoTexto } from '@/components/campos/CampoTexto';
+import { entrar } from '@/dados/autenticacao';
 import { useTelaPequena } from '@/hooks/useTelaPequena';
 import { voltar } from '@/rotas';
 import { cores, espaco, fontes, tamanhoFonte, tipografia } from '@/theme';
@@ -18,6 +19,33 @@ export default function TelaLogin() {
   const telaPequena = useTelaPequena();
   const insets = useSafeAreaInsets();
   const campoSenha = useRef<TextInput>(null);
+  const enviando = useRef(false);
+  const [usuario, setUsuario] = useState('');
+  const [senha, setSenha] = useState('');
+  const [erro, setErro] = useState('');
+  const [ocupado, setOcupado] = useState(false);
+
+  async function enviar() {
+    if (enviando.current) return;
+    if (!usuario.trim() || !senha) {
+      setErro('Informe o login e a senha.');
+      return;
+    }
+
+    enviando.current = true;
+    setOcupado(true);
+    setErro('');
+    try {
+      await entrar(usuario.trim(), senha);
+      setSenha('');
+      router.replace('/area-parceiro');
+    } catch (falha) {
+      setErro(falha instanceof Error ? falha.message : 'Não foi possível entrar.');
+    } finally {
+      enviando.current = false;
+      setOcupado(false);
+    }
+  }
 
   return (
     <View style={styles.tela}>
@@ -48,6 +76,9 @@ export default function TelaLogin() {
               <CampoTexto
                 placeholder="Login..."
                 accessibilityLabel="Login"
+                value={usuario}
+                onChangeText={setUsuario}
+                editable={!ocupado}
                 autoCapitalize="none"
                 autoCorrect={false}
                 autoComplete="username"
@@ -61,6 +92,10 @@ export default function TelaLogin() {
                 ref={campoSenha}
                 placeholder="Senha..."
                 accessibilityLabel="Senha"
+                value={senha}
+                onChangeText={setSenha}
+                editable={!ocupado}
+                onSubmitEditing={enviar}
                 secureTextEntry
                 autoCapitalize="none"
                 autoComplete="current-password"
@@ -69,13 +104,14 @@ export default function TelaLogin() {
               />
             </View>
 
+            {erro ? <Text accessibilityRole="alert" style={styles.erro}>{erro}</Text> : null}
+
             {/* Sem ação até o backend ter recuperação de senha */}
             <Text style={[styles.esqueciSenha, telaPequena && celular.esqueciSenha]}>Esqueci a senha</Text>
 
             <View style={[styles.botoes, telaPequena && celular.botoes]}>
               <BotaoIcone tipo="secundario" titulo="Voltar" icone="rotate-ccw" onPress={() => voltar('/')} />
-              {/* Sem autenticação no backend ainda: entra direto na área do parceiro */}
-              <BotaoIcone titulo="Enviar" icone="send" onPress={() => router.replace('/area-parceiro')} />
+              <BotaoIcone titulo={ocupado ? "Enviando..." : "Enviar"} icone="send" onPress={enviar} />
             </View>
           </View>
         </ScrollView>
@@ -121,6 +157,11 @@ const styles = StyleSheet.create({
   },
   campos: {
     gap: espaco[5],
+  },
+  erro: {
+    ...tipografia.pequeno,
+    color: cores.perigo,
+    marginTop: espaco[3],
   },
   esqueciSenha: {
     ...tipografia.pequeno,

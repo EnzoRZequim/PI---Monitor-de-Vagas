@@ -31,3 +31,32 @@ async function requisitar<T>(caminho: string): Promise<T> {
 // Último resultado da IA para o mapa (GET /mapas/:ID/ocupacao)
 export const buscarOcupacaoDoMapa = (mapaId: string) =>
   requisitar<OcupacaoDoBackend>(`/mapas/${encodeURIComponent(mapaId)}/ocupacao`);
+
+type PedidoParceria = {
+  nome: string;
+  cnpj: string;
+  email: string;
+  senha: string;
+  nomeContato: string;
+  telefone: string;
+  endereco: string;
+  possuiCameras: boolean;
+};
+
+export async function solicitarParceria(pedido: PedidoParceria): Promise<void> {
+  let resposta: Response;
+  try {
+    resposta = await fetch(`${API_URL}/parcerias`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(pedido),
+    });
+  } catch {
+    throw new Error('Não foi possível conectar ao servidor. Tente novamente.');
+  }
+
+  if (resposta.status !== 201) {
+    const corpo = await resposta.json().catch(() => null) as RespostaApi<unknown> | null;
+    throw new Error(corpo?.error ?? 'Não foi possível enviar a solicitação.');
+  }
+}
