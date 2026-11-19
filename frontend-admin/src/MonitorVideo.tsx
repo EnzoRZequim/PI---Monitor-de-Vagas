@@ -1,361 +1,848 @@
-import { useEffect, useState, useRef } from "react";
-import type { ResumoMapa, Mapa, Vaga, EstadoVaga } from "./tipos";
-import type { MonitorResult, SessionStatus, MonitorStatusInfo } from "./tipos";
-import { listarMapas, buscarMapa, iniciarMonitoramento, pararMonitoramento } from "./api";
+
+import { useEffect, useRef, useState } from "react";
+import type {
+  Mapa,
+  MonitorResult,
+  MonitorStatusInfo,
+  ResumoMapa,
+  SessionStatus
+} from "./tipos";
+import {
+  buscarMapa,
+  iniciarMonitoramento,
+  listarMapas,
+  pararMonitoramento
+} from "./api";
+
+type Acao = "iniciando" | "parando" | "reiniciando" | null;
+
+const STATUS: Record<SessionStatus, string> = {
+  IDLE: "Preparando monitoramento",
+  OBSERVING: "Observando movimentação",
+  ANALYZING: "Analisando vagas com IA",
+  WAITING: "Aguardando próxima análise",
+  STOPPED: "Monitoramento interrompido",
+  COMPLETED: "Processamento concluído",
+  ERROR: "Erro no processamento"
+};
+
+function textoDoErro(erro: unknown): string {
+  return erro instanceof Error
+    ? erro.message
+    : "Ocorreu um erro inesperado.";
+}
+
+function criarDados(
+  mapaId: string,
+  arquivo: File,
+  usarMascara: boolean,
+  otimizarMovimento: boolean,
+  intervalo: number
+): FormData {
+  const dados = new FormData();
+
+  dados.append("mapaId", mapaId);
+  dados.append("video", arquivo);
+  dados.append("useMask", usarMascara ? "true" : "false");
+  dados.append(
+    "useMotionOptimization",
+    otimizarMovimento ? "true" : "false"
+  );
+  dados.append("intervalSeconds", String(intervalo));
+
+  return dados;
+}
 
 export default function MonitorVideo() {
   const [mapas, setMapas] = useState<ResumoMapa[]>([]);
-  const [mapaSelecionado, setMapaSelecionado] = useState<string>("");
+  const [mapaSelecionado, setMapaSelecionado] = useState("");
   const [mapa, setMapa] = useState<Mapa | null>(null);
+  const [carregandoMapa, setCarregandoMapa] = useState(false);
+
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [proporcaoVideo, setProporcaoVideo] =
+    useState<number | null>(null);
+
   const [useMask, setUseMask] = useState(true);
   const [useMotionOpt, setUseMotionOpt] = useState(true);
   const [intervalSeconds, setIntervalSeconds] = useState(5);
 
   const [monitorando, setMonitorando] = useState(false);
-  const [sessionId, setSessionId] = useState<string>("");
+  const [sessionId, setSessionId] = useState("");
+  const [acao, setAcao] = useState<Acao>(null);
+
   const [mensagem, setMensagem] = useState("");
   const [erro, setErro] = useState("");
 
-  // Resultados
   const [resultados, setResultados] = useState<MonitorResult[]>([]);
-  const [ultimoResultado, setUltimoResultado] = useState<MonitorResult | null>(null);
-  const [statusAtual, setStatusAtual] = useState<SessionStatus>("IDLE");
-  const [statusInfo, setStatusInfo] = useState<string>("");
+  const [ultimoResultado, setUltimoResultado] =
+    useState<MonitorResult | null>(null);
+
+  const [statusAtual, setStatusAtual] =
+    useState<SessionStatus>("IDLE");
+
+  const [statusInfo, setStatusInfo] = useState("");
 
   const wsRef = useRef<WebSocket | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const videoUrlRef = useRef<string | null>(null);
 
-  // Lista de vagas do mapa (pontos normalizados 0-1)
-  const vagasDoMapa: Vaga[] = mapa?.Vagas ?? [];
+  const processando = acao !== null;
 
-  // Carrega a lista de mapas disponíveis ao montar o componente
+  const aguardandoResultado =
+    !ultimoResultado &&
+    statusAtual !== "COMPLETED" &&
+    statusAtual !== "STOPPED" &&
+    statusAtual !== "ERROR";
+
+  const vagasAtuais = ultimoResultado?.ocupacao.Vagas ?? [];
+
+  const total = vagasAtuais.length;
+  const ocupadas = vagasAtuais.filter(
+    (vaga) => vaga.Ocupada
+  ).length;
+  const livres = total - ocupadas;
+
+  // Carregamento dos mapas cadastrados.
   useEffect(() => {
+    let ativo = true;
+
     listarMapas()
-      .then(setMapas)
-      .catch((e) => setErro(`Erro ao listar mapas: ${e instanceof Error ? e.message : String(e)}`));
+      .then((dados) => {
+        if (ativo) setMapas(dados);
+      })
+      .catch((falha: unknown) => {
+        if (ativo) {
+          setErro(
+            `Erro ao listar mapas: ${textoDoErro(falha)}`
+          );
+        }
+      });
+
+    return () => {
+      ativo = false;
+    };
   }, []);
 
-  // Buscar dados do mapa quando a seleção mudar
+  // Busca o mapa selecionado.
   useEffect(() => {
-    let ignorar = false;
+    if (!mapaSelecionado) return;
 
-    async function carregarMapa() {
-      if (!mapaSelecionado) {
-        setMapa(null);
-        return;
-      }
-      try {
-        const dados = await buscarMapa(mapaSelecionado);
-        if (!ignorar) setMapa(dados);
-      } catch (e: any) {
-        if (!ignorar) setErro(`Erro ao buscar mapa: ${e.message}`);
-      }
-    }
+    let ativo = true;
 
-    carregarMapa();
+    buscarMapa(mapaSelecionado)
+      .then((dados) => {
+        if (ativo) setMapa(dados);
+      })
+      .catch((falha: unknown) => {
+        if (ativo) {
+          setErro(
+            `Erro ao buscar mapa: ${textoDoErro(falha)}`
+          );
+        }
+      })
+      .finally(() => {
+        if (ativo) setCarregandoMapa(false);
+      });
+
     return () => {
-      ignorar = true;
+      ativo = false;
     };
   }, [mapaSelecionado]);
 
-  // Criar URL do objeto para o vídeo selecionado
-  useEffect(() => {
-    if (videoFile) {
-      const url = URL.createObjectURL(videoFile);
-      setVideoUrl(url);
-      return () => URL.revokeObjectURL(url);
-    }
-    setVideoUrl(null);
-  }, [videoFile]);
-
+  // Libera recursos quando o componente é desmontado.
   useEffect(() => {
     return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-        wsRef.current = null;
+      const ws = wsRef.current;
+      wsRef.current = null;
+      ws?.close();
+
+      if (videoUrlRef.current) {
+        URL.revokeObjectURL(videoUrlRef.current);
+        videoUrlRef.current = null;
       }
     };
   }, []);
 
+  function desconectarWebSocket() {
+    const ws = wsRef.current;
+    wsRef.current = null;
+    ws?.close();
+  }
+
   function conectarWebSocket(id: string) {
-    if (wsRef.current) {
-      wsRef.current.close();
-    }
-    const ws = new WebSocket(`ws://localhost:3000/ws/monitor?sessionId=${encodeURIComponent(id)}`);
+    desconectarWebSocket();
+
+    const ws = new WebSocket(
+      `ws://localhost:3000/ws/monitor?sessionId=${encodeURIComponent(id)}`
+    );
+
     wsRef.current = ws;
 
     ws.onopen = () => {
-      setStatusInfo("Conectado ao monitoramento em tempo real.");
+      if (wsRef.current !== ws) return;
+
+      setStatusInfo(
+        "Conectado. Aguardando atualizações da IA..."
+      );
     };
 
     ws.onmessage = (evento) => {
+      if (wsRef.current !== ws) return;
+
       try {
-        const msg: MonitorStatusInfo = JSON.parse(evento.data);
+        const msg = JSON.parse(
+          evento.data
+        ) as MonitorStatusInfo;
+
         if (msg.tipo === "resultado") {
           setUltimoResultado(msg.dados);
-          setResultados((prev) => [msg.dados, ...prev].slice(0, 50));
+
+          setResultados((atuais) =>
+            [msg.dados, ...atuais].slice(0, 50)
+          );
         } else if (msg.tipo === "status") {
           setStatusAtual(msg.status);
           setStatusInfo(msg.info?.message ?? "");
+
+          if (msg.status === "ERROR") {
+            setErro(
+              msg.info?.error ??
+                "Erro durante o processamento."
+            );
+          }
         } else if (msg.tipo === "erro") {
+          setStatusAtual("ERROR");
           setErro(msg.mensagem);
         }
-      } catch (e) {
-        // ignora mensagens malformadas
+      } catch {
+        // Ignora mensagens que não são JSON válido.
+      }
+    };
+
+    ws.onerror = () => {
+      if (wsRef.current === ws) {
+        setErro(
+          "Falha na conexão de monitoramento em tempo real."
+        );
       }
     };
 
     ws.onclose = () => {
-      setStatusInfo("Desconectado do monitoramento.");
-      wsRef.current = null;
-    };
+      if (wsRef.current !== ws) return;
 
-    ws.onerror = () => {
-      setErro("Erro na conexão WebSocket.");
       wsRef.current = null;
+      setStatusInfo(
+        "Conexão em tempo real encerrada."
+      );
     };
   }
 
-  async function aoIniciar() {
-    if (!mapaSelecionado) return setMensagem("Selecione um mapa.");
-    if (!videoFile) return setMensagem("Selecione um vídeo.");
+  function selecionarMapa(id: string) {
+    if (processando) return;
+
+    setMapaSelecionado(id);
+    setMapa(null);
+    setCarregandoMapa(Boolean(id));
     setErro("");
     setMensagem("");
+  }
+
+  function selecionarVideo(arquivo: File | null) {
+    if (processando) return;
+
+    if (videoUrlRef.current) {
+      URL.revokeObjectURL(videoUrlRef.current);
+      videoUrlRef.current = null;
+    }
+
+    if (arquivo) {
+      const url = URL.createObjectURL(arquivo);
+
+      videoUrlRef.current = url;
+      setVideoUrl(url);
+    } else {
+      setVideoUrl(null);
+    }
+
+    setVideoFile(arquivo);
+    setProporcaoVideo(null);
+    setUltimoResultado(null);
+    setResultados([]);
+    setErro("");
+  }
+
+  async function aoIniciar() {
+    if (processando) return;
+
+    if (!mapaSelecionado || !mapa) {
+      return setErro("Selecione um mapa válido.");
+    }
+
+    if (!videoFile) {
+      return setErro(
+        "Selecione um vídeo para analisar."
+      );
+    }
+
+    setAcao("iniciando");
+    setErro("");
+    setMensagem("");
+    setStatusAtual("IDLE");
+    setStatusInfo(
+      "Enviando vídeo e preparando os frames..."
+    );
     setResultados([]);
     setUltimoResultado(null);
 
-    const dados = new FormData();
-    dados.append("mapaId", mapaSelecionado);
-    dados.append("video", videoFile);
-    dados.append("useMask", useMask ? "true" : "false");
-    dados.append("useMotionOptimization", useMotionOpt ? "true" : "false");
-    dados.append("intervalSeconds", String(intervalSeconds));
-
     try {
-      const resposta = await iniciarMonitoramento(dados);
+      const resposta = await iniciarMonitoramento(
+        criarDados(
+          mapaSelecionado,
+          videoFile,
+          useMask,
+          useMotionOpt,
+          intervalSeconds
+        )
+      );
+
       setSessionId(resposta.sessionId);
       setMonitorando(true);
-      setMensagem(resposta.mensagem || "Monitoramento iniciado.");
+
+      setMensagem(
+        "Monitoramento iniciado. Aguardando atualizações da IA."
+      );
+
       conectarWebSocket(resposta.sessionId);
-    } catch (e: any) {
-      setErro(e.message || "Erro ao iniciar monitoramento.");
+    } catch (falha) {
+      setErro(textoDoErro(falha));
+    } finally {
+      setAcao(null);
     }
   }
 
   async function aoParar() {
-    if (!sessionId) return;
+    if (!sessionId || processando) return;
+
+    setAcao("parando");
+    setErro("");
+
     try {
       await pararMonitoramento(sessionId);
+
+      desconectarWebSocket();
+
       setMonitorando(false);
-      if (wsRef.current) {
-        wsRef.current.close();
-        wsRef.current = null;
-      }
-      setMensagem("Monitoramento parado.");
-    } catch (e: any) {
-      setErro(e.message || "Erro ao parar monitoramento.");
+      setSessionId("");
+      setStatusAtual("STOPPED");
+
+      setMensagem(
+        "Monitoramento interrompido."
+      );
+    } catch (falha) {
+      setErro(textoDoErro(falha));
+    } finally {
+      setAcao(null);
     }
   }
 
   async function aoReiniciar() {
-    if (!sessionId) return;
+    if (!sessionId || !videoFile || processando) {
+      return;
+    }
+
+    setAcao("reiniciando");
+    setErro("");
+    setMensagem("");
+
     try {
       await pararMonitoramento(sessionId);
-      if (wsRef.current) {
-        wsRef.current.close();
-        wsRef.current = null;
-      }
+
+      desconectarWebSocket();
+
+      setMonitorando(false);
+      setSessionId("");
       setResultados([]);
       setUltimoResultado(null);
-      setMensagem("");
-      setErro("");
-      setMonitorando(false);
 
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      setStatusAtual("IDLE");
+      setStatusInfo(
+        "Preparando nova sessão de monitoramento..."
+      );
 
-      const dados = new FormData();
-      dados.append("mapaId", mapaSelecionado);
-      dados.append("video", videoFile!);
-      dados.append("useMask", useMask ? "true" : "false");
-      dados.append("useMotionOptimization", useMotionOpt ? "true" : "false");
-      dados.append("intervalSeconds", String(intervalSeconds));
+      const resposta = await iniciarMonitoramento(
+        criarDados(
+          mapaSelecionado,
+          videoFile,
+          useMask,
+          useMotionOpt,
+          intervalSeconds
+        )
+      );
 
-      const resposta = await iniciarMonitoramento(dados);
       setSessionId(resposta.sessionId);
       setMonitorando(true);
-      setMensagem(resposta.mensagem || "Monitoramento reiniciado.");
+
+      setMensagem(
+        "Monitoramento reiniciado. Aguardando atualizações."
+      );
+
       conectarWebSocket(resposta.sessionId);
-    } catch (e: any) {
-      setErro(e.message || "Erro ao reiniciar monitoramento.");
+    } catch (falha) {
+      setErro(
+        `Não foi possível reiniciar: ${textoDoErro(falha)}`
+      );
+    } finally {
+      setAcao(null);
     }
   }
 
-  // Desenhar polígonos das vagas no canvas sobre o vídeo
+  // Desenha o último resultado recebido sobre a prévia.
   useEffect(() => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    const ocupacao = ultimoResultado?.ocupacao.Vagas ?? [];
 
-    if (!video || !canvas || !ultimoResultado) return;
+    if (!video || !canvas || !mapa) return;
 
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    const contexto = canvas.getContext("2d");
+    if (!contexto) return;
 
-    // Ajusta tamanho do canvas ao vídeo
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
+    canvas.width = video.videoWidth || mapa.Largura;
+    canvas.height = video.videoHeight || mapa.Altura;
 
-    // Mapa de status por ID da vaga
-    const statusPorId = new Map<string, boolean>();
-    ocupacao.forEach((v) => statusPorId.set(v.ID, v.Ocupada));
+    contexto.clearRect(
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!ultimoResultado) return;
 
-    vagasDoMapa.forEach((vaga) => {
-      const ocupada = statusPorId.get(vaga.ID) ?? false;
-      const cor = ocupada ? "#ef4444" : "#22c55e";
+    const estilo = getComputedStyle(canvas);
 
-      ctx.beginPath();
-      vaga.Pontos.forEach((ponto, i) => {
-        const x = ponto.X * canvas.width;
-        const y = ponto.Y * canvas.height;
-        if (i === 0) {
-          ctx.moveTo(x, y);
+    const corLivre =
+      estilo.getPropertyValue("--cor-livre").trim() ||
+      "#34d399";
+
+    const corOcupada =
+      estilo.getPropertyValue("--cor-ocupada").trim() ||
+      "#fb7185";
+
+    const corNeutra =
+      estilo.getPropertyValue("--cor-borda").trim() ||
+      "#dfdfdf";
+
+    const corTexto =
+      estilo.getPropertyValue("--cor-superficie").trim() ||
+      "#fefefe";
+
+    const corContorno =
+      estilo.getPropertyValue("--cor-texto").trim() ||
+      "#030b16";
+
+    const estadoPorId = new Map(
+      ultimoResultado.ocupacao.Vagas.map(
+        (vaga) => [vaga.ID, vaga.Ocupada]
+      )
+    );
+
+    mapa.Vagas.forEach((vaga) => {
+      if (!vaga.Pontos.length) return;
+
+      const estado = estadoPorId.get(vaga.ID);
+
+      const cor =
+        estado === undefined
+          ? corNeutra
+          : estado
+            ? corOcupada
+            : corLivre;
+
+      const pontos = vaga.Pontos.map((ponto) => ({
+        x: ponto.X * canvas.width,
+        y: ponto.Y * canvas.height
+      }));
+
+      contexto.beginPath();
+
+      pontos.forEach((ponto, indice) => {
+        if (indice === 0) {
+          contexto.moveTo(ponto.x, ponto.y);
         } else {
-          ctx.lineTo(x, y);
+          contexto.lineTo(ponto.x, ponto.y);
         }
       });
-      ctx.closePath();
 
-      // Preenchimento com transparência
-      ctx.fillStyle = cor + "44"; // ~26% de opacidade
-      ctx.fill();
+      contexto.closePath();
 
-      // Borda sólida
-      ctx.strokeStyle = cor;
-      ctx.lineWidth = 3;
-      ctx.stroke();
+      contexto.fillStyle = cor;
+      contexto.globalAlpha = 0.5;
+      contexto.fill();
 
-      // Nome da vaga no centro do polígono (usa o primeiro ponto como referência)
-      const primeiroX = vaga.Pontos[0].X * canvas.width;
-      const primeiroY = vaga.Pontos[0].Y * canvas.height;
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 14px Arial";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 3;
-      ctx.strokeText(vaga.Nome, primeiroX, primeiroY);
-      ctx.fillText(vaga.Nome, primeiroX, primeiroY);
+      contexto.globalAlpha = 1;
+      contexto.strokeStyle = cor;
+      contexto.lineWidth = 3;
+      contexto.stroke();
+
+      const centroX =
+        pontos.reduce(
+          (soma, ponto) => soma + ponto.x,
+          0
+        ) / pontos.length;
+
+      const centroY =
+        pontos.reduce(
+          (soma, ponto) => soma + ponto.y,
+          0
+        ) / pontos.length;
+
+      contexto.font =
+        `600 16px ${getComputedStyle(video).fontFamily}`;
+
+      contexto.textAlign = "center";
+      contexto.textBaseline = "middle";
+      contexto.lineWidth = 3;
+      contexto.strokeStyle = corContorno;
+
+      contexto.strokeText(
+        vaga.Nome,
+        centroX,
+        centroY
+      );
+
+      contexto.fillStyle = corTexto;
+
+      contexto.fillText(
+        vaga.Nome,
+        centroX,
+        centroY
+      );
     });
-  }, [ultimoResultado, vagasDoMapa]);
+  }, [ultimoResultado, mapa, proporcaoVideo]);
 
-  function corDaVaga(ocupada: boolean): string {
-    return ocupada ? "#ef4444" : "#22c55e";
-  }
+  // Prévia compartilhada entre configuração e monitoramento.
+  const painelVideo = (
+    <div className="painel painel-video">
+      <h3>Prévia do vídeo</h3>
 
-  function vagasDoUltimo(): EstadoVaga[] {
-    return ultimoResultado?.ocupacao.Vagas ?? [];
-  }
+      {videoUrl ? (
+        <>
+          <div
+            className="video-wrapper"
+            style={
+              proporcaoVideo
+                ? { aspectRatio: proporcaoVideo }
+                : undefined
+            }
+          >
+            <video
+              ref={videoRef}
+              className="video-monitor"
+              src={videoUrl}
+              controls
+              muted
+              playsInline
+              preload="metadata"
+              onLoadedMetadata={(evento) => {
+                const video = evento.currentTarget;
 
-  return (
-    <main className="app">
-      <h1>Monitor de Vagas — Vídeo</h1>
+                if (
+                  video.videoWidth &&
+                  video.videoHeight
+                ) {
+                  setProporcaoVideo(
+                    video.videoWidth /
+                      video.videoHeight
+                  );
+                }
+              }}
+            />
 
-      <nav className="abas">
-        <button className="aba" onClick={() => {}}>Monitor de vídeo</button>
-      </nav>
-
-      {monitorando ? (
-        <section className="paineis">
-          <div className="painel painel-controle">
-            <h2>Controle do monitoramento</h2>
-            <p><strong>Sessão:</strong> {sessionId}</p>
-            <p><strong>Mapa:</strong> {mapas.find((m) => m.ID === mapaSelecionado)?.Nome}</p>
-            <p><strong>Status:</strong> {statusAtual} — {statusInfo}</p>
-
-            <div className="controles">
-              <button onClick={aoParar} className="botao-parar">
-                ⏹ Parar monitoramento
-              </button>
-              <button onClick={aoReiniciar} className="botao-reiniciar">
-                🔄 Reiniciar monitoramento
-              </button>
-            </div>
-
-            <div className="legenda">
-              <span style={{ color: "#22c55e", fontWeight: "bold" }}>■</span> Livre &nbsp;&nbsp;
-              <span style={{ color: "#ef4444", fontWeight: "bold" }}>■</span> Ocupada
-            </div>
-          </div>
-
-          <div className="painel painel-video">
-            <h2>Vídeo com mapa de vagas</h2>
-            {videoUrl ? (
-              <>
-                <div className="video-wrapper">
-                  <video
-                    ref={videoRef}
-                    className="video-monitor"
-                    autoPlay
-                    muted
-                    playsInline
-                  />
-                  <canvas ref={canvasRef} className="canvas-overlay" />
-                </div>
-                <p style={{ fontSize: "0.8rem", color: "#666", marginTop: "6px" }}>
-                  Verde = vaga livre &nbsp;|&nbsp; Vermelho = vaga ocupada &nbsp;|&nbsp; Frame {ultimoResultado?.frame ?? "-"}
-                </p>
-              </>
-            ) : (
-              <p>Carregando vídeo...</p>
+            {monitorando && (
+              <canvas
+                ref={canvasRef}
+                className="canvas-overlay"
+              />
             )}
           </div>
 
+          <p className="monitor-video-nota">
+            Esta é uma prévia local. A IA processa frames
+            separadamente; as marcações exibem o último
+            resultado recebido e não acompanham
+            necessariamente o instante reproduzido.
+          </p>
+        </>
+      ) : (
+        <div className="estado-vazio">
+          <p>
+            Selecione um arquivo de vídeo para visualizar
+            a prévia.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <section className="monitor-video pagina-editor">
+      <div className="pagina-introducao">
+        <div>
+          <span className="pagina-categoria">
+            MONITORAMENTO INTELIGENTE
+          </span>
+
+          <h2>Monitoramento por vídeo</h2>
+
+          <p>
+            Envie um vídeo e acompanhe os resultados
+            da inteligência artificial.
+          </p>
+        </div>
+      </div>
+
+      {erro && (
+        <div
+          className="mensagem mensagem-erro"
+          role="alert"
+        >
+          {erro}
+        </div>
+      )}
+
+      {mensagem && (
+        <div
+          className="mensagem mensagem-info"
+          role="status"
+        >
+          {mensagem}
+        </div>
+      )}
+
+      {processando && (
+        <div
+          className="status-processamento status-ia"
+          role="status"
+          aria-live="polite"
+        >
+          <strong>
+            {acao === "parando"
+              ? "Interrompendo monitoramento..."
+              : acao === "reiniciando"
+                ? "Reiniciando monitoramento..."
+                : "Preparando análise de vídeo..."}
+          </strong>
+
+          <p>
+            {acao === "parando"
+              ? "Enviando solicitação de parada ao servidor."
+              : "Enviando o vídeo e aguardando a preparação dos frames pela IA."}
+          </p>
+
+          <progress
+            aria-label="Operação de monitoramento em andamento"
+          />
+        </div>
+      )}
+
+      {monitorando ? (
+        <section
+          className="paineis"
+          aria-label="Monitoramento ativo"
+        >
+          <div className="painel painel-controle">
+            <h3>Controle do monitoramento</h3>
+
+            <p>
+              <strong>Mapa:</strong>{" "}
+              {mapa?.Nome ?? mapaSelecionado}
+            </p>
+
+            <p>
+              <strong>Sessão:</strong>{" "}
+              <span className="monitor-video-id">
+                {sessionId}
+              </span>
+            </p>
+
+            <p>
+              <strong>Estado:</strong>{" "}
+              {STATUS[statusAtual]}
+            </p>
+
+            {statusInfo && (
+              <p
+                className="monitor-video-nota"
+                role="status"
+              >
+                {statusInfo}
+              </p>
+            )}
+
+            <div className="controles">
+              <button
+                type="button"
+                className="botao-parar"
+                disabled={processando}
+                onClick={() => void aoParar()}
+              >
+                {acao === "parando"
+                  ? "Parando..."
+                  : "Parar monitoramento"}
+              </button>
+
+              <button
+                type="button"
+                className="botao-reiniciar"
+                disabled={processando}
+                onClick={() => void aoReiniciar()}
+              >
+                {acao === "reiniciando"
+                  ? "Reiniciando..."
+                  : "Reiniciar monitoramento"}
+              </button>
+            </div>
+
+            <p className="legenda">
+              Livre: verde · Ocupada: vermelho ·
+              Sem resultado: neutra
+            </p>
+          </div>
+
+          {painelVideo}
+
           <div className="painel painel-resultado">
-            <h2>Resultado da última análise</h2>
+            <h3>Resultado da última análise</h3>
+
             {ultimoResultado ? (
               <>
-                <p>Frame {ultimoResultado.frame} de {ultimoResultado.totalFrames}</p>
-                <p>Horário: {new Date(ultimoResultado.timestamp).toLocaleTimeString()}</p>
                 <p>
-                  Movimento detectado:{ultimoResultado.motionDetected ? " sim" : " não"}
-                  {ultimoResultado.motionInfo ? ` (${(ultimoResultado.motionInfo.ratio * 100).toFixed(1)}% pixels alterados)` : ""}
+                  Frame analisado: {ultimoResultado.frame} de{" "}
+                  {ultimoResultado.totalFrames}
                 </p>
 
-                <table className="tabela-vagas">
-                  <thead>
-                    <tr>
-                      <th>Vaga</th>
-                      <th>Status</th>
-                      <th>Confiança</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {vagasDoUltimo().map((vaga) => (
-                      <tr key={vaga.ID}>
-                        <td>{vaga.Nome}</td>
-                        <td style={{ color: corDaVaga(vaga.Ocupada), fontWeight: "bold" }}>
-                          {vaga.Ocupada ? "Ocupada" : "Livre"}
-                        </td>
-                        <td>{(vaga.Sobreposicao * 100).toFixed(0)}%</td>
+                <p>
+                  Horário:{" "}
+                  {new Date(
+                    ultimoResultado.timestamp
+                  ).toLocaleTimeString("pt-BR")}
+                </p>
+
+                <p>
+                  Movimento detectado:{" "}
+                  {ultimoResultado.motionDetected
+                    ? "sim"
+                    : "não"}
+
+                  {ultimoResultado.motionInfo &&
+                    ` (${(
+                      ultimoResultado.motionInfo.ratio *
+                      100
+                    ).toFixed(1)}% de pixels alterados)`}
+                </p>
+
+                <div className="monitor-indicadores">
+                  <div className="monitor-indicador">
+                    <span>Total</span>
+                    <strong>{total}</strong>
+                  </div>
+
+                  <div className="monitor-indicador monitor-livre">
+                    <span>Livres</span>
+                    <strong>{livres}</strong>
+                  </div>
+
+                  <div className="monitor-indicador monitor-ocupada">
+                    <span>Ocupadas</span>
+                    <strong>{ocupadas}</strong>
+                  </div>
+                </div>
+
+                {ultimoResultado.totalFrames > 0 && (
+                  <progress
+                    className="monitor-video-progresso"
+                    value={ultimoResultado.frame}
+                    max={ultimoResultado.totalFrames}
+                    aria-label="Posição do último frame analisado"
+                  />
+                )}
+
+                <div className="tabela-container">
+                  <table className="tabela-vagas">
+                    <thead>
+                      <tr>
+                        <th>Vaga</th>
+                        <th>Estado</th>
+                        <th>Sobreposição</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+
+                    <tbody>
+                      {vagasAtuais.map((vaga) => (
+                        <tr key={vaga.ID}>
+                          <td>{vaga.Nome}</td>
+
+                          <td
+                            style={{
+                              color: vaga.Ocupada
+                                ? "var(--cor-ocupada)"
+                                : "var(--cor-livre)"
+                            }}
+                          >
+                            {vaga.Ocupada
+                              ? "Ocupada"
+                              : "Livre"}
+                          </td>
+
+                          <td>
+                            {(
+                              vaga.Sobreposicao * 100
+                            ).toFixed(0)}
+                            %
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </>
             ) : (
-              <p>Aguardando primeira análise...</p>
+              <div
+                className="status-processamento"
+                role="status"
+                aria-live="polite"
+              >
+                <strong>
+                  {STATUS[statusAtual]}
+                </strong>
+
+                <p>
+                  {statusAtual === "COMPLETED"
+                    ? "Vídeo concluído sem resultados de ocupação recebidos."
+                    : statusAtual === "ERROR"
+                      ? "A análise encontrou um problema. Consulte a mensagem de erro."
+                      : "Aguardando o primeiro resultado da IA. A imagem permanece disponível."}
+                </p>
+
+                {aguardandoResultado && (
+                  <progress
+                    aria-label="Aguardando primeira análise"
+                  />
+                )}
+              </div>
             )}
           </div>
 
           <div className="painel painel-historico">
-            <h2>Histórico (últimas análises)</h2>
+            <h3>Histórico das últimas análises</h3>
+
             {resultados.length === 0 ? (
-              <p>Nenhuma análise ainda.</p>
+              <p>
+                Nenhuma análise recebida nesta sessão.
+              </p>
             ) : (
               <div className="tabela-container">
                 <table className="tabela-resumo">
@@ -369,17 +856,40 @@ export default function MonitorVideo() {
                       <th>Total</th>
                     </tr>
                   </thead>
+
                   <tbody>
-                    {resultados.map((r) => {
-                      const vagas = r.ocupacao.Vagas;
-                      const ocupadas = vagas.filter((v) => v.Ocupada).length;
+                    {resultados.map((resultado) => {
+                      const vagas =
+                        resultado.ocupacao.Vagas;
+
+                      const qtdOcupadas = vagas.filter(
+                        (vaga) => vaga.Ocupada
+                      ).length;
+
                       return (
-                        <tr key={`${r.sessionId}-${r.frame}`}>
-                          <td>{r.frame}</td>
-                          <td>{new Date(r.timestamp).toLocaleTimeString()}</td>
-                          <td>{r.motionDetected ? "Sim" : "Não"}</td>
-                          <td style={{ color: "#ef4444" }}>{ocupadas}</td>
-                          <td style={{ color: "#22c55e" }}>{vagas.length - ocupadas}</td>
+                        <tr
+                          key={`${resultado.sessionId}-${resultado.frame}`}
+                        >
+                          <td>{resultado.frame}</td>
+
+                          <td>
+                            {new Date(
+                              resultado.timestamp
+                            ).toLocaleTimeString("pt-BR")}
+                          </td>
+
+                          <td>
+                            {resultado.motionDetected
+                              ? "Sim"
+                              : "Não"}
+                          </td>
+
+                          <td>{qtdOcupadas}</td>
+
+                          <td>
+                            {vagas.length - qtdOcupadas}
+                          </td>
+
                           <td>{vagas.length}</td>
                         </tr>
                       );
@@ -391,80 +901,176 @@ export default function MonitorVideo() {
           </div>
         </section>
       ) : (
-        <section className="paineis">
-          <div className="painel">
-            <h2>Configurar monitoramento</h2>
+        <section
+          className="paineis"
+          aria-label="Configuração do monitoramento"
+        >
+          <div className="painel painel-controle">
+            <h3>Configurar monitoramento</h3>
 
             <div className="form-group">
-              <label>Mapa</label>
+              <label htmlFor="video-mapa">
+                Mapa do estacionamento
+              </label>
+
               <select
+                id="video-mapa"
                 value={mapaSelecionado}
-                onChange={(e) => setMapaSelecionado(e.target.value)}
+                disabled={processando}
+                onChange={(evento) =>
+                  selecionarMapa(evento.target.value)
+                }
               >
-                <option value="">Selecione um mapa</option>
-                {mapas.map((m) => (
-                  <option key={m.ID} value={m.ID}>
-                    {m.Nome} ({m.QuantidadeVagas} vagas)
+                <option value="">
+                  Selecione um mapa
+                </option>
+
+                {mapas.map((item) => (
+                  <option
+                    key={item.ID}
+                    value={item.ID}
+                  >
+                    {item.Nome} (
+                    {item.QuantidadeVagas} vagas)
                   </option>
                 ))}
               </select>
+
+              {carregandoMapa && (
+                <p className="monitor-video-nota">
+                  Carregando mapa...
+                </p>
+              )}
             </div>
 
             <div className="form-group">
-              <label>Vídeo (arquivo local)</label>
+              <label htmlFor="video-arquivo">
+                Vídeo (arquivo local)
+              </label>
+
               <input
+                id="video-arquivo"
                 type="file"
                 accept="video/mp4,video/mpeg,video/quicktime,video/x-msvideo"
-                onChange={(e) => setVideoFile(e.target.files?.[0] ?? null)}
+                disabled={processando}
+                onChange={(evento) =>
+                  selecionarVideo(
+                    evento.target.files?.[0] ?? null
+                  )
+                }
               />
-              {videoFile && <p style={{ fontSize: "0.9rem", color: "#666" }}>{videoFile.name}</p>}
+
+              {videoFile && (
+                <p className="monitor-video-nota">
+                  {videoFile.name}
+                </p>
+              )}
             </div>
 
-            <div className="form-group botoes-toggle">
-              <label>Máscara de ROI (analisar movimento só dentro das vagas)</label>
+            <div className="form-group">
+              <label>
+                Máscara de ROI (considerar apenas
+                regiões das vagas)
+              </label>
+
               <button
-                className={useMask ? "toggle ativo" : "toggle"}
-                onClick={() => setUseMask((v) => !v)}
+                type="button"
+                className={
+                  useMask
+                    ? "toggle ativo"
+                    : "toggle"
+                }
+                aria-pressed={useMask}
+                disabled={processando}
+                onClick={() =>
+                  setUseMask((valor) => !valor)
+                }
               >
-                {useMask ? "LIGADO" : "DESLIGADO"}
+                {useMask ? "Ligada" : "Desligada"}
               </button>
             </div>
 
-            <div className="form-group botoes-toggle">
-              <label>Otimização de movimento (analisar só se houver movimento por 5s)</label>
+            <div className="form-group">
+              <label>
+                Otimização de movimento
+              </label>
+
               <button
-                className={useMotionOpt ? "toggle ativo" : "toggle"}
-                onClick={() => setUseMotionOpt((v) => !v)}
+                type="button"
+                className={
+                  useMotionOpt
+                    ? "toggle ativo"
+                    : "toggle"
+                }
+                aria-pressed={useMotionOpt}
+                disabled={processando}
+                onClick={() =>
+                  setUseMotionOpt((valor) => !valor)
+                }
               >
-                {useMotionOpt ? "LIGADO" : "DESLIGADO"}
+                {useMotionOpt
+                  ? "Ligada"
+                  : "Desligada"}
               </button>
-              <p style={{ fontSize: "0.85rem", color: "#666", marginTop: "0.25rem" }}>
-                Desligado = analisa a cada {intervalSeconds}s independentemente de movimento.
+
+              <p className="monitor-video-nota">
+                Quando desligada, a análise segue
+                o intervalo configurado,
+                independentemente da detecção
+                de movimento.
               </p>
             </div>
 
             <div className="form-group">
-              <label>Intervalo entre análises (segundos)</label>
+              <label htmlFor="video-intervalo">
+                Intervalo entre análises (segundos)
+              </label>
+
               <input
+                id="video-intervalo"
                 type="number"
-                min="1"
-                max="60"
+                min={1}
+                max={60}
                 value={intervalSeconds}
-                onChange={(e) => setIntervalSeconds(Math.max(1, Math.min(60, parseInt(e.target.value, 10) || 5)))}
+                disabled={processando}
+                onChange={(evento) =>
+                  setIntervalSeconds(
+                    Math.max(
+                      1,
+                      Math.min(
+                        60,
+                        Number.parseInt(
+                          evento.target.value,
+                          10
+                        ) || 5
+                      )
+                    )
+                  )
+                }
               />
             </div>
 
-            <div className="controles">
-              <button onClick={aoIniciar} disabled={!mapaSelecionado || !videoFile}>
-                ▶ Iniciar monitoramento
-              </button>
-            </div>
+            <button
+              type="button"
+              className="botao-primario"
+              disabled={
+                !mapaSelecionado ||
+                !mapa ||
+                !videoFile ||
+                carregandoMapa ||
+                processando
+              }
+              onClick={() => void aoIniciar()}
+            >
+              {acao === "iniciando"
+                ? "Preparando análise..."
+                : "Iniciar monitoramento"}
+            </button>
           </div>
 
-          {mensagem && <p className="mensagem">{mensagem}</p>}
-          {erro && <p className="erro">{erro}</p>}
+          {painelVideo}
         </section>
       )}
-    </main>
+    </section>
   );
 }

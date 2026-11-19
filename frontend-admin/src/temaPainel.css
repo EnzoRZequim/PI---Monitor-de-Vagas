@@ -1,0 +1,61 @@
+
+/* ==========================================
+   VAGA LIVRE — TEMA DO PAINEL
+   ========================================== */
+
+:root {
+  color-scheme: light;
+
+  font-family: Inter, Arial, sans-serif;
+  font-synthesis: none;
+
+  background-color: #f5f7fb;
+  color: #030b16;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background: #f5f7fb;
+}
+
+#root {
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Tipografia */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: Montserrat, Inter, Arial, sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+/* Acessibilidade */
+
+:focus-visible {
+  outline: 3px solid rgb(19 86 171 / 35%);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: #bfdbfe;
+  color: #030b16;
+}
