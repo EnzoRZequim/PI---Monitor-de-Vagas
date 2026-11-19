@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import type {
   Mapa,
@@ -14,7 +13,11 @@ import {
   pararMonitoramento
 } from "./api";
 
+
 type Acao = "iniciando" | "parando" | "reiniciando" | null;
+
+type OrigemVideo = "arquivo" | "url";
+
 
 const STATUS: Record<SessionStatus, string> = {
   IDLE: "Preparando monitoramento",
@@ -26,23 +29,35 @@ const STATUS: Record<SessionStatus, string> = {
   ERROR: "Erro no processamento"
 };
 
+
 function textoDoErro(erro: unknown): string {
   return erro instanceof Error
     ? erro.message
     : "Ocorreu um erro inesperado.";
 }
 
+
 function criarDados(
   mapaId: string,
-  arquivo: File,
+  arquivo: File | null,
+  urlVideo: string,
   usarMascara: boolean,
   otimizarMovimento: boolean,
   intervalo: number
 ): FormData {
   const dados = new FormData();
 
+
   dados.append("mapaId", mapaId);
-  dados.append("video", arquivo);
+
+  if (arquivo) {
+    dados.append("video", arquivo);
+  }
+
+  if (urlVideo) {
+    dados.append("videoUrl", urlVideo);
+  }
+
   dados.append("useMask", usarMascara ? "true" : "false");
   dados.append(
     "useMotionOptimization",
@@ -50,8 +65,10 @@ function criarDados(
   );
   dados.append("intervalSeconds", String(intervalo));
 
+
   return dados;
 }
+
 
 export default function MonitorVideo() {
   const [mapas, setMapas] = useState<ResumoMapa[]>([]);
@@ -59,37 +76,50 @@ export default function MonitorVideo() {
   const [mapa, setMapa] = useState<Mapa | null>(null);
   const [carregandoMapa, setCarregandoMapa] = useState(false);
 
+
+  const [origemVideo, setOrigemVideo] =
+    useState<OrigemVideo>("arquivo");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoUrlExterna, setVideoUrlExterna] = useState("");
   const [proporcaoVideo, setProporcaoVideo] =
     useState<number | null>(null);
+
 
   const [useMask, setUseMask] = useState(true);
   const [useMotionOpt, setUseMotionOpt] = useState(true);
   const [intervalSeconds, setIntervalSeconds] = useState(5);
 
+
   const [monitorando, setMonitorando] = useState(false);
   const [sessionId, setSessionId] = useState("");
   const [acao, setAcao] = useState<Acao>(null);
 
+
   const [mensagem, setMensagem] = useState("");
   const [erro, setErro] = useState("");
+
 
   const [resultados, setResultados] = useState<MonitorResult[]>([]);
   const [ultimoResultado, setUltimoResultado] =
     useState<MonitorResult | null>(null);
 
+
   const [statusAtual, setStatusAtual] =
     useState<SessionStatus>("IDLE");
 
+
   const [statusInfo, setStatusInfo] = useState("");
+
 
   const wsRef = useRef<WebSocket | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const videoUrlRef = useRef<string | null>(null);
 
+
   const processando = acao !== null;
+
 
   const aguardandoResultado =
     !ultimoResultado &&
@@ -97,7 +127,9 @@ export default function MonitorVideo() {
     statusAtual !== "STOPPED" &&
     statusAtual !== "ERROR";
 
+
   const vagasAtuais = ultimoResultado?.ocupacao.Vagas ?? [];
+
 
   const total = vagasAtuais.length;
   const ocupadas = vagasAtuais.filter(
@@ -105,9 +137,24 @@ export default function MonitorVideo() {
   ).length;
   const livres = total - ocupadas;
 
+
+  const ehUrlRtsp =
+    origemVideo === "url" &&
+    videoUrlExterna.toLowerCase().startsWith("rtsp://");
+
+
+  const urlPrevia =
+    origemVideo === "url"
+      ? ehUrlRtsp
+        ? null
+        : videoUrlExterna
+      : videoUrl;
+
+
   // Carregamento dos mapas cadastrados.
   useEffect(() => {
     let ativo = true;
+
 
     listarMapas()
       .then((dados) => {
@@ -121,16 +168,20 @@ export default function MonitorVideo() {
         }
       });
 
+
     return () => {
       ativo = false;
     };
   }, []);
 
+
   // Busca o mapa selecionado.
   useEffect(() => {
     if (!mapaSelecionado) return;
 
+
     let ativo = true;
+
 
     buscarMapa(mapaSelecionado)
       .then((dados) => {
@@ -147,10 +198,12 @@ export default function MonitorVideo() {
         if (ativo) setCarregandoMapa(false);
       });
 
+
     return () => {
       ativo = false;
     };
   }, [mapaSelecionado]);
+
 
   // Libera recursos quando o componente é desmontado.
   useEffect(() => {
@@ -159,6 +212,7 @@ export default function MonitorVideo() {
       wsRef.current = null;
       ws?.close();
 
+
       if (videoUrlRef.current) {
         URL.revokeObjectURL(videoUrlRef.current);
         videoUrlRef.current = null;
@@ -166,39 +220,49 @@ export default function MonitorVideo() {
     };
   }, []);
 
+
   function desconectarWebSocket() {
     const ws = wsRef.current;
     wsRef.current = null;
     ws?.close();
   }
 
+
   function conectarWebSocket(id: string) {
     desconectarWebSocket();
+
 
     const ws = new WebSocket(
       `ws://localhost:3000/ws/monitor?sessionId=${encodeURIComponent(id)}`
     );
 
+
     wsRef.current = ws;
+
 
     ws.onopen = () => {
       if (wsRef.current !== ws) return;
+
 
       setStatusInfo(
         "Conectado. Aguardando atualizações da IA..."
       );
     };
 
+
     ws.onmessage = (evento) => {
       if (wsRef.current !== ws) return;
+
 
       try {
         const msg = JSON.parse(
           evento.data
         ) as MonitorStatusInfo;
 
+
         if (msg.tipo === "resultado") {
           setUltimoResultado(msg.dados);
+
 
           setResultados((atuais) =>
             [msg.dados, ...atuais].slice(0, 50)
@@ -207,10 +271,11 @@ export default function MonitorVideo() {
           setStatusAtual(msg.status);
           setStatusInfo(msg.info?.message ?? "");
 
+
           if (msg.status === "ERROR") {
             setErro(
               msg.info?.error ??
-                "Erro durante o processamento."
+              "Erro durante o processamento."
             );
           }
         } else if (msg.tipo === "erro") {
@@ -222,6 +287,7 @@ export default function MonitorVideo() {
       }
     };
 
+
     ws.onerror = () => {
       if (wsRef.current === ws) {
         setErro(
@@ -230,8 +296,10 @@ export default function MonitorVideo() {
       }
     };
 
+
     ws.onclose = () => {
       if (wsRef.current !== ws) return;
+
 
       wsRef.current = null;
       setStatusInfo(
@@ -240,8 +308,10 @@ export default function MonitorVideo() {
     };
   }
 
+
   function selecionarMapa(id: string) {
     if (processando) return;
+
 
     setMapaSelecionado(id);
     setMapa(null);
@@ -250,22 +320,37 @@ export default function MonitorVideo() {
     setMensagem("");
   }
 
+
+  function selecionarOrigemVideo(origem: OrigemVideo) {
+    if (processando) return;
+
+
+    setOrigemVideo(origem);
+    setErro("");
+    setMensagem("");
+  }
+
+
   function selecionarVideo(arquivo: File | null) {
     if (processando) return;
+
 
     if (videoUrlRef.current) {
       URL.revokeObjectURL(videoUrlRef.current);
       videoUrlRef.current = null;
     }
 
+
     if (arquivo) {
       const url = URL.createObjectURL(arquivo);
+
 
       videoUrlRef.current = url;
       setVideoUrl(url);
     } else {
       setVideoUrl(null);
     }
+
 
     setVideoFile(arquivo);
     setProporcaoVideo(null);
@@ -274,46 +359,81 @@ export default function MonitorVideo() {
     setErro("");
   }
 
+
+  function alterarVideoUrlExterna(url: string) {
+    if (processando) return;
+
+
+    setVideoUrlExterna(url ?? "");
+    setProporcaoVideo(null);
+    setUltimoResultado(null);
+    setResultados([]);
+    setErro("");
+  }
+
+
   async function aoIniciar() {
     if (processando) return;
+
 
     if (!mapaSelecionado || !mapa) {
       return setErro("Selecione um mapa válido.");
     }
 
-    if (!videoFile) {
+
+    if (origemVideo === "arquivo" && !videoFile) {
       return setErro(
         "Selecione um vídeo para analisar."
       );
     }
+
+
+    if (
+      origemVideo === "url" &&
+      !videoUrlExterna.trim()
+    ) {
+      return setErro(
+        "Informe a URL do vídeo para analisar."
+      );
+    }
+
 
     setAcao("iniciando");
     setErro("");
     setMensagem("");
     setStatusAtual("IDLE");
     setStatusInfo(
-      "Enviando vídeo e preparando os frames..."
+      origemVideo === "url"
+        ? "Conectando ao vídeo em tempo real..."
+        : "Enviando vídeo e preparando os frames..."
     );
     setResultados([]);
     setUltimoResultado(null);
+
 
     try {
       const resposta = await iniciarMonitoramento(
         criarDados(
           mapaSelecionado,
-          videoFile,
+          origemVideo === "arquivo" ? videoFile : null,
+          origemVideo === "url"
+            ? videoUrlExterna.trim()
+            : "",
           useMask,
           useMotionOpt,
           intervalSeconds
         )
       );
 
+
       setSessionId(resposta.sessionId);
       setMonitorando(true);
+
 
       setMensagem(
         "Monitoramento iniciado. Aguardando atualizações da IA."
       );
+
 
       conectarWebSocket(resposta.sessionId);
     } catch (falha) {
@@ -323,20 +443,26 @@ export default function MonitorVideo() {
     }
   }
 
+
   async function aoParar() {
     if (!sessionId || processando) return;
+
 
     setAcao("parando");
     setErro("");
 
+
     try {
       await pararMonitoramento(sessionId);
 
+
       desconectarWebSocket();
+
 
       setMonitorando(false);
       setSessionId("");
       setStatusAtual("STOPPED");
+
 
       setMensagem(
         "Monitoramento interrompido."
@@ -348,46 +474,66 @@ export default function MonitorVideo() {
     }
   }
 
+
   async function aoReiniciar() {
-    if (!sessionId || !videoFile || processando) {
+    if (
+      !sessionId ||
+      processando ||
+      (origemVideo === "arquivo" && !videoFile) ||
+      (origemVideo === "url" && !videoUrlExterna.trim())
+    ) {
       return;
     }
+
 
     setAcao("reiniciando");
     setErro("");
     setMensagem("");
 
+
     try {
       await pararMonitoramento(sessionId);
 
+
       desconectarWebSocket();
+
 
       setMonitorando(false);
       setSessionId("");
       setResultados([]);
       setUltimoResultado(null);
 
+
       setStatusAtual("IDLE");
       setStatusInfo(
-        "Preparando nova sessão de monitoramento..."
+        origemVideo === "url"
+          ? "Reconectando ao vídeo em tempo real..."
+          : "Preparando nova sessão de monitoramento..."
       );
+
 
       const resposta = await iniciarMonitoramento(
         criarDados(
           mapaSelecionado,
-          videoFile,
+          origemVideo === "arquivo" ? videoFile : null,
+          origemVideo === "url"
+            ? videoUrlExterna.trim()
+            : "",
           useMask,
           useMotionOpt,
           intervalSeconds
         )
       );
 
+
       setSessionId(resposta.sessionId);
       setMonitorando(true);
+
 
       setMensagem(
         "Monitoramento reiniciado. Aguardando atualizações."
       );
+
 
       conectarWebSocket(resposta.sessionId);
     } catch (falha) {
@@ -399,18 +545,23 @@ export default function MonitorVideo() {
     }
   }
 
+
   // Desenha o último resultado recebido sobre a prévia.
   useEffect(() => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
 
+
     if (!video || !canvas || !mapa) return;
+
 
     const contexto = canvas.getContext("2d");
     if (!contexto) return;
 
+
     canvas.width = video.videoWidth || mapa.Largura;
     canvas.height = video.videoHeight || mapa.Altura;
+
 
     contexto.clearRect(
       0,
@@ -419,29 +570,37 @@ export default function MonitorVideo() {
       canvas.height
     );
 
+
     if (!ultimoResultado) return;
 
+
     const estilo = getComputedStyle(canvas);
+
 
     const corLivre =
       estilo.getPropertyValue("--cor-livre").trim() ||
       "#34d399";
 
+
     const corOcupada =
       estilo.getPropertyValue("--cor-ocupada").trim() ||
       "#fb7185";
+
 
     const corNeutra =
       estilo.getPropertyValue("--cor-borda").trim() ||
       "#dfdfdf";
 
+
     const corTexto =
       estilo.getPropertyValue("--cor-superficie").trim() ||
       "#fefefe";
 
+
     const corContorno =
       estilo.getPropertyValue("--cor-texto").trim() ||
       "#030b16";
+
 
     const estadoPorId = new Map(
       ultimoResultado.ocupacao.Vagas.map(
@@ -449,10 +608,13 @@ export default function MonitorVideo() {
       )
     );
 
+
     mapa.Vagas.forEach((vaga) => {
       if (!vaga.Pontos.length) return;
 
+
       const estado = estadoPorId.get(vaga.ID);
+
 
       const cor =
         estado === undefined
@@ -461,12 +623,15 @@ export default function MonitorVideo() {
             ? corOcupada
             : corLivre;
 
+
       const pontos = vaga.Pontos.map((ponto) => ({
         x: ponto.X * canvas.width,
         y: ponto.Y * canvas.height
       }));
 
+
       contexto.beginPath();
+
 
       pontos.forEach((ponto, indice) => {
         if (indice === 0) {
@@ -476,16 +641,20 @@ export default function MonitorVideo() {
         }
       });
 
+
       contexto.closePath();
+
 
       contexto.fillStyle = cor;
       contexto.globalAlpha = 0.5;
       contexto.fill();
 
+
       contexto.globalAlpha = 1;
       contexto.strokeStyle = cor;
       contexto.lineWidth = 3;
       contexto.stroke();
+
 
       const centroX =
         pontos.reduce(
@@ -493,19 +662,23 @@ export default function MonitorVideo() {
           0
         ) / pontos.length;
 
+
       const centroY =
         pontos.reduce(
           (soma, ponto) => soma + ponto.y,
           0
         ) / pontos.length;
 
+
       contexto.font =
         `600 16px ${getComputedStyle(video).fontFamily}`;
+
 
       contexto.textAlign = "center";
       contexto.textBaseline = "middle";
       contexto.lineWidth = 3;
       contexto.strokeStyle = corContorno;
+
 
       contexto.strokeText(
         vaga.Nome,
@@ -513,7 +686,9 @@ export default function MonitorVideo() {
         centroY
       );
 
+
       contexto.fillStyle = corTexto;
+
 
       contexto.fillText(
         vaga.Nome,
@@ -523,12 +698,14 @@ export default function MonitorVideo() {
     });
   }, [ultimoResultado, mapa, proporcaoVideo]);
 
+
   // Prévia compartilhada entre configuração e monitoramento.
   const painelVideo = (
     <div className="painel painel-video">
       <h3>Prévia do vídeo</h3>
 
-      {videoUrl ? (
+
+      {urlPrevia ? (
         <>
           <div
             className="video-wrapper"
@@ -541,13 +718,15 @@ export default function MonitorVideo() {
             <video
               ref={videoRef}
               className="video-monitor"
-              src={videoUrl}
+              src={urlPrevia}
               controls
               muted
+              loop
               playsInline
               preload="metadata"
               onLoadedMetadata={(evento) => {
                 const video = evento.currentTarget;
+
 
                 if (
                   video.videoWidth &&
@@ -555,11 +734,12 @@ export default function MonitorVideo() {
                 ) {
                   setProporcaoVideo(
                     video.videoWidth /
-                      video.videoHeight
+                    video.videoHeight
                   );
                 }
               }}
             />
+
 
             {monitorando && (
               <canvas
@@ -568,6 +748,7 @@ export default function MonitorVideo() {
               />
             )}
           </div>
+
 
           <p className="monitor-video-nota">
             Esta é uma prévia local. A IA processa frames
@@ -579,13 +760,17 @@ export default function MonitorVideo() {
       ) : (
         <div className="estado-vazio">
           <p>
-            Selecione um arquivo de vídeo para visualizar
-            a prévia.
+            {ehUrlRtsp
+              ? "Prévia não disponível para streams RTSP. O monitoramento em tempo real continua sendo processado pelo servidor."
+              : origemVideo === "url"
+                ? "Informe a URL de um vídeo para visualizar a prévia."
+                : "Selecione um arquivo de vídeo para visualizar a prévia."}
           </p>
         </div>
       )}
     </div>
   );
+
 
   return (
     <section className="monitor-video pagina-editor">
@@ -595,14 +780,18 @@ export default function MonitorVideo() {
             MONITORAMENTO INTELIGENTE
           </span>
 
+
           <h2>Monitoramento por vídeo</h2>
 
+
           <p>
-            Envie um vídeo e acompanhe os resultados
+            Envie um vídeo, informe uma URL ou conecte um
+            stream ao vivo para acompanhar os resultados
             da inteligência artificial.
           </p>
         </div>
       </div>
+
 
       {erro && (
         <div
@@ -613,6 +802,7 @@ export default function MonitorVideo() {
         </div>
       )}
 
+
       {mensagem && (
         <div
           className="mensagem mensagem-info"
@@ -621,6 +811,7 @@ export default function MonitorVideo() {
           {mensagem}
         </div>
       )}
+
 
       {processando && (
         <div
@@ -636,17 +827,22 @@ export default function MonitorVideo() {
                 : "Preparando análise de vídeo..."}
           </strong>
 
+
           <p>
             {acao === "parando"
               ? "Enviando solicitação de parada ao servidor."
-              : "Enviando o vídeo e aguardando a preparação dos frames pela IA."}
+              : origemVideo === "url"
+                ? "Conectando ao vídeo em tempo real..."
+                : "Enviando o vídeo e aguardando a preparação dos frames pela IA."}
           </p>
+
 
           <progress
             aria-label="Operação de monitoramento em andamento"
           />
         </div>
       )}
+
 
       {monitorando ? (
         <section
@@ -656,10 +852,12 @@ export default function MonitorVideo() {
           <div className="painel painel-controle">
             <h3>Controle do monitoramento</h3>
 
+
             <p>
               <strong>Mapa:</strong>{" "}
               {mapa?.Nome ?? mapaSelecionado}
             </p>
+
 
             <p>
               <strong>Sessão:</strong>{" "}
@@ -668,10 +866,12 @@ export default function MonitorVideo() {
               </span>
             </p>
 
+
             <p>
               <strong>Estado:</strong>{" "}
               {STATUS[statusAtual]}
             </p>
+
 
             {statusInfo && (
               <p
@@ -681,6 +881,7 @@ export default function MonitorVideo() {
                 {statusInfo}
               </p>
             )}
+
 
             <div className="controles">
               <button
@@ -694,6 +895,7 @@ export default function MonitorVideo() {
                   : "Parar monitoramento"}
               </button>
 
+
               <button
                 type="button"
                 className="botao-reiniciar"
@@ -706,16 +908,20 @@ export default function MonitorVideo() {
               </button>
             </div>
 
+
             <p className="legenda">
               Livre: verde · Ocupada: vermelho ·
               Sem resultado: neutra
             </p>
           </div>
 
+
           {painelVideo}
+
 
           <div className="painel painel-resultado">
             <h3>Resultado da última análise</h3>
+
 
             {ultimoResultado ? (
               <>
@@ -724,6 +930,7 @@ export default function MonitorVideo() {
                   {ultimoResultado.totalFrames}
                 </p>
 
+
                 <p>
                   Horário:{" "}
                   {new Date(
@@ -731,11 +938,13 @@ export default function MonitorVideo() {
                   ).toLocaleTimeString("pt-BR")}
                 </p>
 
+
                 <p>
                   Movimento detectado:{" "}
                   {ultimoResultado.motionDetected
                     ? "sim"
                     : "não"}
+
 
                   {ultimoResultado.motionInfo &&
                     ` (${(
@@ -744,22 +953,26 @@ export default function MonitorVideo() {
                     ).toFixed(1)}% de pixels alterados)`}
                 </p>
 
+
                 <div className="monitor-indicadores">
                   <div className="monitor-indicador">
                     <span>Total</span>
                     <strong>{total}</strong>
                   </div>
 
+
                   <div className="monitor-indicador monitor-livre">
                     <span>Livres</span>
                     <strong>{livres}</strong>
                   </div>
+
 
                   <div className="monitor-indicador monitor-ocupada">
                     <span>Ocupadas</span>
                     <strong>{ocupadas}</strong>
                   </div>
                 </div>
+
 
                 {ultimoResultado.totalFrames > 0 && (
                   <progress
@@ -769,6 +982,7 @@ export default function MonitorVideo() {
                     aria-label="Posição do último frame analisado"
                   />
                 )}
+
 
                 <div className="tabela-container">
                   <table className="tabela-vagas">
@@ -780,10 +994,12 @@ export default function MonitorVideo() {
                       </tr>
                     </thead>
 
+
                     <tbody>
                       {vagasAtuais.map((vaga) => (
                         <tr key={vaga.ID}>
                           <td>{vaga.Nome}</td>
+
 
                           <td
                             style={{
@@ -796,6 +1012,7 @@ export default function MonitorVideo() {
                               ? "Ocupada"
                               : "Livre"}
                           </td>
+
 
                           <td>
                             {(
@@ -819,6 +1036,7 @@ export default function MonitorVideo() {
                   {STATUS[statusAtual]}
                 </strong>
 
+
                 <p>
                   {statusAtual === "COMPLETED"
                     ? "Vídeo concluído sem resultados de ocupação recebidos."
@@ -826,6 +1044,7 @@ export default function MonitorVideo() {
                       ? "A análise encontrou um problema. Consulte a mensagem de erro."
                       : "Aguardando o primeiro resultado da IA. A imagem permanece disponível."}
                 </p>
+
 
                 {aguardandoResultado && (
                   <progress
@@ -836,8 +1055,10 @@ export default function MonitorVideo() {
             )}
           </div>
 
+
           <div className="painel painel-historico">
             <h3>Histórico das últimas análises</h3>
+
 
             {resultados.length === 0 ? (
               <p>
@@ -857,14 +1078,17 @@ export default function MonitorVideo() {
                     </tr>
                   </thead>
 
+
                   <tbody>
                     {resultados.map((resultado) => {
                       const vagas =
                         resultado.ocupacao.Vagas;
 
+
                       const qtdOcupadas = vagas.filter(
                         (vaga) => vaga.Ocupada
                       ).length;
+
 
                       return (
                         <tr
@@ -872,11 +1096,13 @@ export default function MonitorVideo() {
                         >
                           <td>{resultado.frame}</td>
 
+
                           <td>
                             {new Date(
                               resultado.timestamp
                             ).toLocaleTimeString("pt-BR")}
                           </td>
+
 
                           <td>
                             {resultado.motionDetected
@@ -884,11 +1110,14 @@ export default function MonitorVideo() {
                               : "Não"}
                           </td>
 
+
                           <td>{qtdOcupadas}</td>
+
 
                           <td>
                             {vagas.length - qtdOcupadas}
                           </td>
+
 
                           <td>{vagas.length}</td>
                         </tr>
@@ -908,10 +1137,12 @@ export default function MonitorVideo() {
           <div className="painel painel-controle">
             <h3>Configurar monitoramento</h3>
 
+
             <div className="form-group">
               <label htmlFor="video-mapa">
                 Mapa do estacionamento
               </label>
+
 
               <select
                 id="video-mapa"
@@ -925,6 +1156,7 @@ export default function MonitorVideo() {
                   Selecione um mapa
                 </option>
 
+
                 {mapas.map((item) => (
                   <option
                     key={item.ID}
@@ -936,6 +1168,7 @@ export default function MonitorVideo() {
                 ))}
               </select>
 
+
               {carregandoMapa && (
                 <p className="monitor-video-nota">
                   Carregando mapa...
@@ -943,35 +1176,114 @@ export default function MonitorVideo() {
               )}
             </div>
 
+
             <div className="form-group">
-              <label htmlFor="video-arquivo">
-                Vídeo (arquivo local)
-              </label>
+              <label>Origem do vídeo</label>
 
-              <input
-                id="video-arquivo"
-                type="file"
-                accept="video/mp4,video/mpeg,video/quicktime,video/x-msvideo"
-                disabled={processando}
-                onChange={(evento) =>
-                  selecionarVideo(
-                    evento.target.files?.[0] ?? null
-                  )
-                }
-              />
 
-              {videoFile && (
-                <p className="monitor-video-nota">
-                  {videoFile.name}
-                </p>
-              )}
+              <div className="controles">
+                <button
+                  type="button"
+                  className={
+                    origemVideo === "arquivo"
+                      ? "toggle ativo"
+                      : "toggle"
+                  }
+                  aria-pressed={
+                    origemVideo === "arquivo"
+                  }
+                  disabled={processando}
+                  onClick={() =>
+                    selecionarOrigemVideo("arquivo")
+                  }
+                >
+                  Arquivo local
+                </button>
+
+
+                <button
+                  type="button"
+                  className={
+                    origemVideo === "url"
+                      ? "toggle ativo"
+                      : "toggle"
+                  }
+                  aria-pressed={origemVideo === "url"}
+                  disabled={processando}
+                  onClick={() =>
+                    selecionarOrigemVideo("url")
+                  }
+                >
+                  URL do vídeo
+                </button>
+              </div>
             </div>
+
+
+            {origemVideo === "arquivo" ? (
+              <div className="form-group">
+                <label htmlFor="video-arquivo">
+                  Vídeo (arquivo local)
+                </label>
+
+
+                <input
+                  id="video-arquivo"
+                  type="file"
+                  accept="video/mp4,video/mpeg,video/quicktime,video/x-msvideo"
+                  disabled={processando}
+                  onChange={(evento) =>
+                    selecionarVideo(
+                      evento.target.files?.[0] ?? null
+                    )
+                  }
+                />
+
+
+                {videoFile && (
+                  <p className="monitor-video-nota">
+                    {videoFile.name}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="form-group">
+                <label htmlFor="video-url">
+                  URL do vídeo
+                </label>
+
+
+                <input
+                  id="video-url"
+                  type="text"
+                  placeholder="https://exemplo.com/video.mp4 ou rtsp://localhost:8554/camera-teste"
+                  value={videoUrlExterna ?? ""}
+                  disabled={processando}
+                  onChange={(evento) =>
+                    alterarVideoUrlExterna(
+                      evento.target.value
+                    )
+                  }
+                />
+
+
+                <p className="monitor-video-nota">
+                  Para vídeo ao vivo, informe uma URL
+                  RTSP, como
+                  rtsp://localhost:8554/camera-teste.
+                  A prévia não é exibida para RTSP, mas o
+                  monitoramento continua no servidor.
+                </p>
+              </div>
+            )}
+
 
             <div className="form-group">
               <label>
                 Máscara de ROI (considerar apenas
                 regiões das vagas)
               </label>
+
 
               <button
                 type="button"
@@ -990,10 +1302,12 @@ export default function MonitorVideo() {
               </button>
             </div>
 
+
             <div className="form-group">
               <label>
                 Otimização de movimento
               </label>
+
 
               <button
                 type="button"
@@ -1013,6 +1327,7 @@ export default function MonitorVideo() {
                   : "Desligada"}
               </button>
 
+
               <p className="monitor-video-nota">
                 Quando desligada, a análise segue
                 o intervalo configurado,
@@ -1021,17 +1336,19 @@ export default function MonitorVideo() {
               </p>
             </div>
 
+
             <div className="form-group">
               <label htmlFor="video-intervalo">
                 Intervalo entre análises (segundos)
               </label>
+
 
               <input
                 id="video-intervalo"
                 type="number"
                 min={1}
                 max={60}
-                value={intervalSeconds}
+                value={intervalSeconds ?? 5}
                 disabled={processando}
                 onChange={(evento) =>
                   setIntervalSeconds(
@@ -1050,15 +1367,19 @@ export default function MonitorVideo() {
               />
             </div>
 
+
             <button
               type="button"
               className="botao-primario"
               disabled={
                 !mapaSelecionado ||
                 !mapa ||
-                !videoFile ||
                 carregandoMapa ||
-                processando
+                processando ||
+                (origemVideo === "arquivo" &&
+                  !videoFile) ||
+                (origemVideo === "url" &&
+                  !videoUrlExterna.trim())
               }
               onClick={() => void aoIniciar()}
             >
@@ -1067,6 +1388,7 @@ export default function MonitorVideo() {
                 : "Iniciar monitoramento"}
             </button>
           </div>
+
 
           {painelVideo}
         </section>
