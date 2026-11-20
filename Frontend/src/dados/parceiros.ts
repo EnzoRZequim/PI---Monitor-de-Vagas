@@ -207,6 +207,26 @@ export function ocupacaoDoParceiro(parceiro: Parceiro): Ocupacao {
   );
 }
 
+function blocoPorId(campusId: string | undefined, blocoId: string | undefined) {
+  return parceiros.flatMap((p) => p.campi).find((c) => c.id === campusId)?.blocos.find((b) => b.id === blocoId);
+}
+
+// Mapa (câmera) ligado ao bloco: é dele que vem a ocupação real da IA nos cartões
+export function mapaDoBloco(campusId: string | undefined, blocoId: string | undefined) {
+  return blocoPorId(campusId, blocoId)?.mapaId;
+}
+
+// Liga o bloco ao mapa analisado pela IA em "Mapas e IA" (aberto pelo ícone de mapa do bloco). A
+// partir daí os cartões do bloco, do campus e do parceiro mostram a ocupação desse mapa.
+// Provisório, só na memória do app (volta ao padrão ao recarregar). Com o banco de dados, vira a
+// coluna mapa_id do bloco: troque o corpo por uma chamada à API (ex.: PUT /blocos/:id { mapaId }).
+export function vincularMapaAoBloco(campusId: string | undefined, blocoId: string | undefined, mapaId: string) {
+  const bloco = blocoPorId(campusId, blocoId);
+  if (!bloco || bloco.mapaId === mapaId) return false;
+  bloco.mapaId = mapaId;
+  return true;
+}
+
 export function buscarParceiro(parceiroId: string | undefined) {
   return parceiros.find((p) => p.id === parceiroId);
 }

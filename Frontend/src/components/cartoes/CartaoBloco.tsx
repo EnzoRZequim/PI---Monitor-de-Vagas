@@ -13,10 +13,12 @@ type Props = {
   // Com onChangeAtivo, mostra o liga/desliga (variante "Bloco edit" do Figma)
   ativo?: boolean;
   onChangeAtivo?: (ativo: boolean) => void;
+  // Com onMapa, mostra o ícone de mapa que abre a análise de vagas com IA do bloco
+  onMapa?: () => void;
 };
 
 // Linha de bloco na edição de um local ("Locais" no Figma)
-export function CartaoBloco({ nome, vagas, onRemover, ativo = false, onChangeAtivo }: Props) {
+export function CartaoBloco({ nome, vagas, onRemover, ativo = false, onChangeAtivo, onMapa }: Props) {
   const telaPequena = useTelaPequena();
 
   return (
@@ -35,6 +37,12 @@ export function CartaoBloco({ nome, vagas, onRemover, ativo = false, onChangeAti
       </View>
 
       <View style={styles.acoes}>
+        {/* Mesmo tamanho e cor do ícone de editar do CartaoLocalParceiro */}
+        {onMapa && (
+          <Pressable onPress={onMapa} accessibilityRole="button" accessibilityLabel={`Mapa do ${nome}`} hitSlop={8}>
+            <Feather name="map" size={22} color={cores.primaria} />
+          </Pressable>
+        )}
         {onChangeAtivo && <Interruptor ativo={ativo} onChange={onChangeAtivo} rotulo={`Ativar ${nome}`} />}
         <Pressable onPress={onRemover} accessibilityRole="button" accessibilityLabel={`Remover ${nome}`} hitSlop={8}>
           <Feather name="x" size={22} color={cores.perigo} />

@@ -1,5 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { useState } from 'react';
+import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Botao } from '@/components/botoes/Botao';
@@ -10,7 +11,9 @@ import { DialogoConfirmacao } from '@/components/base/DialogoConfirmacao';
 import { LinkAcao } from '@/components/botoes/LinkAcao';
 import { ListaRolavel } from '@/components/base/ListaRolavel';
 import { TelaParceiro } from '@/components/telas/TelaParceiro';
-import { novoId, salvarLocal, type BlocoParceiro, type LocalParceiro } from '@/dados/areaParceiro';
+import { novoId, parceiroLogado, salvarLocal, type BlocoParceiro, type LocalParceiro } from '@/dados/areaParceiro';
+import { ocupacaoDoBloco, useOcupacaoAoVivo, useOcupacaoReal } from '@/dados/ocupacaoAoVivo';
+import { blocosDoCampus, buscarCampus, mapaDoBloco } from '@/dados/parceiros';
 import { useTelaPequena } from '@/hooks/useTelaPequena';
 import { voltar } from '@/rotas';
 import { cores, espaco, fontes, tipografia } from '@/theme';
@@ -24,6 +27,20 @@ export function FormularioLocal({ local }: { local?: LocalParceiro }) {
   const [endereco, setEndereco] = useState(local?.endereco ?? '');
   const [blocos, setBlocos] = useState<BlocoParceiro[]>(local?.blocos ?? []);
   const [novoBloco, setNovoBloco] = useState<NovoBloco | null>(null);
+
+  // Mesmo campus das listas públicas (o local tem o mesmo id): é dele que vem a ocupação analisada
+  // pela IA. Enquanto o formulário está aberto, busca a ocupação real como as listas fazem.
+  const campus = buscarCampus(parceiroLogado, local?.id);
+  useOcupacaoAoVivo();
+  useOcupacaoReal(blocosDoCampus(campus));
+
+  // Total de vagas do bloco: o da análise da IA (o mesmo das caixinhas) quando o bloco tem mapa
+  // analisado; senão, o do cadastro. Blocos novos, ainda não salvos, ficam com o do cadastro.
+  function vagasDoBloco(bloco: BlocoParceiro) {
+    const publico = campus?.blocos.find((b) => b.id === bloco.id);
+    return campus && publico ? ocupacaoDoBloco(campus.id, publico).vagasTotais : bloco.vagasTotais;
+  }
+
   // Erro do bloco em criação, mostrado logo abaixo dele
   const [erroBloco, setErroBloco] = useState('');
   // Erro do formulário, mostrado acima dos botões
@@ -90,10 +107,25 @@ export function FormularioLocal({ local }: { local?: LocalParceiro }) {
     <CartaoBloco
       key={bloco.id}
       nome={bloco.nome}
-      vagas={bloco.vagasTotais}
+      vagas={vagasDoBloco(bloco)}
       ativo={bloco.ativo}
       onChangeAtivo={(ativo) => alterarBloco(bloco.id, { ativo })}
       onRemover={() => setRemovendo(bloco)}
+      // Abre Mapas e IA na aba Monitor de vagas, já no mapa do bloco se ele tiver um. A análise feita
+      // lá liga o bloco ao mapa e atualiza os cartões. O formulário fica embaixo na pilha de telas e
+      // volta como estava pelo "Voltar"
+      onMapa={() =>
+        router.push({
+          pathname: '/area-parceiro/mapas',
+          params: {
+            aba: 'monitor',
+            mapa: mapaDoBloco(local?.id, bloco.id) ?? bloco.mapaId ?? '',
+            bloco: bloco.nome,
+            local: local?.id ?? '',
+            blocoId: bloco.id,
+          },
+        })
+      }
     />
   ));
 

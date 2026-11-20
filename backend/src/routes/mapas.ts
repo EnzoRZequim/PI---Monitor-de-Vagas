@@ -15,13 +15,14 @@ import {
   updated
 } from "../common/ResponseHelper";
 import { IMAGES_DIR } from "../config/paths";
-import { buscarOcupacaoAtual } from "../services/OcupacaoAtual";
+import { buscarOcupacaoAtual, registrarOcupacao } from "../services/OcupacaoAtual";
 import { sugerirVaga } from "../services/SamVagas";
 import { detectarVagas } from "../services/DetectorVagasSeg";
 import {
   buscarMapa,
   criarMapa,
   listarMapas,
+  proximoIdDeMapa,
   salvarMapa
 } from "../services/MapaStorage";
 import { separarVagas } from "../services/SeparadorVaga";
@@ -66,9 +67,12 @@ const formatoSugestao = z.object({
 const TOLERANCIA_PROPORCAO = 0.05;
 
 router.post("/", upload.single("Imagem"), async (req, res) => {
-  const { ID, Nome } = req.body;
+  const { Nome } = req.body;
+  // O ID é opcional: sem ele, é gerado como um auto-incremento (o app não manda mais ID). Quem
+  // ainda manda um ID próprio (frontend-admin) continua funcionando.
+  const idInformado = typeof req.body.ID === "string" ? req.body.ID.trim() : "";
 
-  if (typeof ID !== "string" || !formatoID.test(ID)) {
+  if (idInformado && !formatoID.test(idInformado)) {
     return sendResponse(res, badRequest("ID inválido. Use letras, números e hífens."));
   }
 
@@ -102,6 +106,8 @@ router.post("/", upload.single("Imagem"), async (req, res) => {
     return sendResponse(res, badRequest("Arquivo de imagem inválido."));
   }
 
+  // Gerado só depois de validar a imagem, para um envio inválido não "gastar" um número
+  const ID = idInformado || (await proximoIdDeMapa());
   const Imagem = `${ID}.${extensao}`;
   const caminhoImagem = path.join(IMAGES_DIR, Imagem);
   const mapa: Mapa = {
@@ -349,6 +355,10 @@ router.post("/:ID/analisar", upload.single("Imagem"), async (req, res) => {
       req.file.buffer,
       mapa
     );
+
+    // Vira a ocupação atual do mapa (GET /:ID/ocupacao), como já acontece no monitor de vídeo: é o
+    // que o app mostra nos cartões dos blocos, campi e parceiros ligados a este mapa
+    registrarOcupacao(ocupacao);
 
     return sendResponse(res, ok("Análise concluída.", ocupacao));
   } catch (erro) {

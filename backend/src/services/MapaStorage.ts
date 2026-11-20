@@ -61,6 +61,27 @@ export async function listarMapas(): Promise<ResumoMapa[]> {
   return resumos.sort((a, b) => a.Nome.localeCompare(b.Nome));
 }
 
+// Próximo ID numérico (1, 2, 3...), imitando o auto-incremento do banco enquanto os mapas ficam
+// em arquivos JSON. IDs antigos com letras (ex.: "Teste") são ignorados na conta.
+// Com o banco de dados: o ID vem da coluna auto-incremento (ex.: INSERT ... RETURNING id) e esta
+// função deixa de existir; a rota POST /mapas já funciona sem receber ID.
+export async function proximoIdDeMapa(): Promise<string> {
+  let arquivos: string[];
+  try {
+    arquivos = await readdir(MAPS_DIR);
+  } catch (erro) {
+    if ((erro as NodeJS.ErrnoException).code === "ENOENT") return "1";
+    throw erro;
+  }
+
+  const maior = arquivos
+    .map((arquivo) => /^(\d+)\.json$/.exec(arquivo)?.[1])
+    .filter((numero): numero is string => numero !== undefined)
+    .reduce((maximo, numero) => Math.max(maximo, Number(numero)), 0);
+
+  return String(maior + 1);
+}
+
 export async function criarMapa(mapa: Mapa): Promise<boolean> {
   const caminho = caminhoMapa(mapa.ID);
   await mkdir(MAPS_DIR, { recursive: true });

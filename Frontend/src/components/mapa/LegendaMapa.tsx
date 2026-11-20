@@ -5,7 +5,8 @@ import { cores, espaco, fontes, mapa, tipografia } from '@/theme';
 type Props = {
   livres: number;
   ocupadas: number;
-  preferenciaisLivres: number;
+  // Sem esse valor o item "Preferencial" não aparece (ex.: análise de foto, que não sabe o tipo da vaga)
+  preferenciaisLivres?: number;
 };
 
 // Legenda do mapa, com a contagem de cada tipo de vaga (a cor sozinha não basta para daltônicos:
@@ -15,7 +16,9 @@ export function LegendaMapa({ livres, ocupadas, preferenciaisLivres }: Props) {
     <View style={styles.legenda}>
       <Item cor={mapa.livre} rotulo="Livre" valor={`${livres}`} />
       <Item cor={mapa.ocupada} rotulo="Ocupada" valor={`${ocupadas}`} />
-      <Item cor={mapa.preferencial} rotulo="Preferencial" valor={`${preferenciaisLivres} livres`} />
+      {preferenciaisLivres !== undefined && (
+        <Item cor={mapa.preferencial} rotulo="Preferencial" valor={`${preferenciaisLivres} livres`} />
+      )}
     </View>
   );
 }

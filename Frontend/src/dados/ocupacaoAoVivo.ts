@@ -17,8 +17,11 @@ type EstadoBloco = {
   sorteio: () => number;
   // Já recebeu a ocupação real do backend: a simulação para de mexer neste bloco
   real: boolean;
-  // Total de vagas informado pelo backend, que vale mais que o do bloco
+  // Total de vagas e de ocupadas informados pela IA do backend, que valem mais que os do bloco. A
+  // contagem vem direto da análise: mesmo vagas que a planta ainda não conhece (ex.: desenhadas no
+  // Editor de mapas depois) entram nos cartões
   totalReal?: number;
+  ocupadasReal?: number;
 };
 
 // A cada intervalo, 1 ou 2 vagas trocam de estado (um carro entra ou sai)
@@ -78,7 +81,7 @@ export function plantaDoBloco(campusId: string, bloco: Bloco) {
 export function ocupacaoDoBloco(campusId: string, bloco: Bloco) {
   const estado = estados.get(chaveDoBloco(campusId, bloco));
   return {
-    vagasOcupadas: estado ? estado.ocupadas.size : bloco.vagasOcupadas,
+    vagasOcupadas: estado?.ocupadasReal ?? (estado ? estado.ocupadas.size : bloco.vagasOcupadas),
     vagasTotais: estado?.totalReal ?? bloco.vagasTotais,
   };
 }
@@ -123,7 +126,13 @@ function aplicarOcupacaoReal(campusId: string, bloco: Bloco, ocupacao: OcupacaoD
   const ocupadas = new Set(
     ocupacao.Vagas.filter((vaga) => vaga.Ocupada && idsDaPlanta.has(vaga.ID)).map((vaga) => vaga.ID),
   );
-  estados.set(chave, { ...estado, ocupadas, real: true, totalReal: ocupacao.Vagas.length });
+  estados.set(chave, {
+    ...estado,
+    ocupadas,
+    real: true,
+    totalReal: ocupacao.Vagas.length,
+    ocupadasReal: ocupacao.Vagas.filter((vaga) => vaga.Ocupada).length,
+  });
   notificar();
 }
 
@@ -131,7 +140,7 @@ function aplicarOcupacaoReal(campusId: string, bloco: Bloco, ocupacao: OcupacaoD
 function voltarParaSimulacao(campusId: string, bloco: Bloco) {
   const estado = estados.get(chaveDoBloco(campusId, bloco));
   if (!estado?.real) return;
-  const { totalReal: _totalReal, ...resto } = estado;
+  const { totalReal: _totalReal, ocupadasReal: _ocupadasReal, ...resto } = estado;
   estados.set(chaveDoBloco(campusId, bloco), { ...resto, real: false, ocupadasBase: estado.ocupadas.size });
   notificar();
 }
