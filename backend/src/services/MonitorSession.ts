@@ -2,6 +2,7 @@ import { separarVagas } from './SeparadorVaga';
 import { buscarMapa } from './MapaStorage';
 import { Fatiador } from './Fatiador';
 import { MotionDetector } from './MotionDetector';
+import { publicarOcupacao } from './IntegracaoExterna';
 import type { Mapa } from '../types/Mapa';
 import type { OcupacaoMapa, EstadoVaga } from '../types/Ocupacao';
 import path from 'path';
@@ -10,7 +11,9 @@ import { OCCUPANCY_DIR, TEMP_DIR } from '../config/paths';
 
 
 
+
 export type SessionStatus = 'IDLE' | 'OBSERVING' | 'ANALYZING' | 'WAITING' | 'STOPPED' | 'COMPLETED' | 'ERROR';
+
 
 
 
@@ -29,6 +32,7 @@ export interface MonitorConfig {
 
 
 
+
 export interface VagaRegion {
   id: string;
   nome: string;
@@ -37,6 +41,7 @@ export interface VagaRegion {
   w: number;
   h: number;
 }
+
 
 
 
@@ -52,7 +57,9 @@ export interface MonitorResult {
 
 
 
+
 type ResultadoProcessamento = 'analisado' | 'ignorado' | 'erro';
+
 
 
 
@@ -72,10 +79,12 @@ export class MonitorSession {
 
 
 
+
   constructor(config: MonitorConfig) {
     this.config = config;
     this.detector = new MotionDetector();
   }
+
 
 
 
@@ -86,6 +95,7 @@ export class MonitorSession {
 
 
 
+
       this.mapa = await buscarMapa(this.config.mapaId);
       if (!this.mapa) {
         throw new Error('Mapa não encontrado.');
@@ -93,10 +103,12 @@ export class MonitorSession {
 
 
 
+
       if (this.config.videoUrl) {
         await this.iniciarMonitoramentoAoVivo();
         return;
       }
+
 
 
 
@@ -110,15 +122,18 @@ export class MonitorSession {
 
 
 
+
       if (this.frames.length === 0) {
         throw new Error('Nenhum frame extraído do vídeo.');
       }
 
 
 
+
       this.currentFrameIndex = 0;
       this.lastAnalysisTime = Date.now();
       this.stopped = false;
+
 
 
 
@@ -133,9 +148,11 @@ export class MonitorSession {
 
 
 
+
   stop(): void {
     this.stopped = true;
     this.status = 'STOPPED';
+
 
 
 
@@ -146,10 +163,12 @@ export class MonitorSession {
 
 
 
+
     if (this.capturaAoVivo) {
       this.capturaAoVivo.parar();
       this.capturaAoVivo = null;
     }
+
 
 
 
@@ -159,8 +178,10 @@ export class MonitorSession {
 
 
 
+
   private async iniciarMonitoramentoAoVivo(): Promise<void> {
     this.outputDirAoVivo = path.join(TEMP_DIR, `frames_${this.config.sessionId}`);
+
 
 
 
@@ -168,9 +189,11 @@ export class MonitorSession {
 
 
 
+
     this.config.onStatus('OBSERVING', {
       message: 'Conectando ao vídeo em tempo real...',
     });
+
 
 
 
@@ -182,13 +205,16 @@ export class MonitorSession {
 
 
 
+
     this.currentFrameIndex = 0;
     this.lastAnalysisTime = 0;
     this.stopped = false;
 
 
 
+
     await this.aguardarPrimeiroFrame();
+
 
 
 
@@ -198,14 +224,17 @@ export class MonitorSession {
 
 
 
+
     void this.monitorarFramesAoVivo();
   }
+
 
 
 
   private async aguardarPrimeiroFrame(): Promise<void> {
     const tempoMaximo = 30000;
     const inicio = Date.now();
+
 
 
 
@@ -217,6 +246,7 @@ export class MonitorSession {
 
 
 
+
       if (frames.length > 0) {
         console.log('[MONITOR] primeiro frame detectado:', frames[0]);
         return;
@@ -224,8 +254,10 @@ export class MonitorSession {
 
 
 
+
       await new Promise<void>((resolve) => setTimeout(resolve, 500));
     }
+
 
 
 
@@ -236,9 +268,11 @@ export class MonitorSession {
 
 
 
+
   private async monitorarFramesAoVivo(): Promise<void> {
     while (!this.stopped) {
       const arquivos = await readdir(this.outputDirAoVivo);
+
 
 
 
@@ -250,13 +284,16 @@ export class MonitorSession {
 
 
 
+
       this.frames = frames.map((arquivo) =>
         path.join(this.outputDirAoVivo, arquivo)
       );
 
 
 
+
       const novosFrames = this.frames.slice(this.currentFrameIndex);
+
 
 
 
@@ -266,8 +303,10 @@ export class MonitorSession {
 
 
 
+
       for (const framePath of novosFrames) {
         if (this.stopped) return;
+
 
 
 
@@ -277,9 +316,11 @@ export class MonitorSession {
 
 
 
+
       await new Promise<void>((resolve) => setTimeout(resolve, 500));
     }
   }
+
 
 
 
@@ -291,6 +332,7 @@ export class MonitorSession {
 
 
 
+
     for (const vaga of this.mapa.Vagas) {
       const xs = vaga.Pontos.map((p) => p.X * largura);
       const ys = vaga.Pontos.map((p) => p.Y * altura);
@@ -298,6 +340,7 @@ export class MonitorSession {
       const y = Math.max(0, Math.floor(Math.min(...ys)));
       const w = Math.max(1, Math.min(largura - x, Math.ceil(Math.max(...xs) - Math.min(...xs))));
       const h = Math.max(1, Math.min(altura - y, Math.ceil(Math.max(...ys) - Math.min(...ys))));
+
 
 
 
@@ -315,6 +358,7 @@ export class MonitorSession {
 
 
 
+
   private async processNextFrame(): Promise<void> {
     if (this.stopped || this.currentFrameIndex >= this.frames.length) {
       this.status = 'COMPLETED';
@@ -324,7 +368,9 @@ export class MonitorSession {
 
 
 
+
     const framePath = this.frames[this.currentFrameIndex];
+
 
 
 
@@ -336,6 +382,7 @@ export class MonitorSession {
 
 
 
+
     const resultado = await this.processarFrame(
       framePath,
       this.currentFrameIndex
@@ -343,11 +390,14 @@ export class MonitorSession {
 
 
 
+
     if (this.stopped) return;
 
 
 
+
     this.currentFrameIndex++;
+
 
 
 
@@ -361,6 +411,7 @@ export class MonitorSession {
 
 
 
+
     if (resultado === 'erro') {
       this.timer = setTimeout(() => this.processNextFrame(), 1000);
       return;
@@ -368,8 +419,10 @@ export class MonitorSession {
 
 
 
+
     this.timer = setTimeout(() => this.processNextFrame(), 500);
   }
+
 
 
 
@@ -383,13 +436,16 @@ export class MonitorSession {
 
 
 
+
     const regions = this.getVagaRegions();
+
 
 
 
     // Detecção de movimento (se otimização ligada)
     let motionDetected = false;
     let motionInfo: { changedPixels: number; totalPixels: number; ratio: number } | null = null;
+
 
 
 
@@ -405,8 +461,10 @@ export class MonitorSession {
 
 
 
+
     // Máquina de estados
     let deveAnalisar = false;
+
 
 
 
@@ -427,6 +485,7 @@ export class MonitorSession {
             motionRatio: motionInfo?.ratio ?? 0,
           });
         }
+
 
 
 
@@ -452,14 +511,17 @@ export class MonitorSession {
 
 
 
+
     if (!deveAnalisar) {
       return 'ignorado';
     }
 
 
 
+
     this.status = 'ANALYZING';
     this.lastAnalysisTime = agora;
+
 
 
 
@@ -471,13 +533,16 @@ export class MonitorSession {
 
 
 
+
     try {
       const ocupacao = await separarVagas(frameBuffer, this.mapa!);
 
 
 
+
       // Salvar resultado em arquivo
       await this.salvarResultado(ocupacao);
+
 
 
 
@@ -493,7 +558,15 @@ export class MonitorSession {
 
 
 
+
       this.config.onResult(resultado);
+
+
+
+
+      // Publica o resultado na API externa (mapa + vagas + estado)
+      publicarOcupacao(this.mapa!, ocupacao);
+
 
 
 
@@ -505,12 +578,14 @@ export class MonitorSession {
 
 
 
+
       return 'analisado';
     } catch (err: any) {
       this.config.onError(err.message || 'Erro na análise de ocupação.');
       return 'erro';
     }
   }
+
 
 
 

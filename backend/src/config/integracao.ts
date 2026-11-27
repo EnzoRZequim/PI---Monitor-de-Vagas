@@ -1,0 +1,1 @@
+export const INTEGRACAO_API_URL = process.env.INTEGRACAO_API_URL ?? "";

@@ -3,11 +3,13 @@ export interface Ponto {
   Y: number;
 }
 
+
 export interface Vaga {
   ID: string;
   Nome: string;
   Pontos: Ponto[];
 }
+
 
 export interface Mapa {
   ID: string;
@@ -15,5 +17,7 @@ export interface Mapa {
   Imagem: string;
   Largura: number;
   Altura: number;
+  OrganizacaoID: string;
+  EstacionamentoID: string;
   Vagas: Vaga[];
 }

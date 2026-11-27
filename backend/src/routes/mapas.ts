@@ -66,7 +66,7 @@ const formatoSugestao = z.object({
 const TOLERANCIA_PROPORCAO = 0.05;
 
 router.post("/", upload.single("Imagem"), async (req, res) => {
-  const { ID, Nome } = req.body;
+  const { ID, Nome, OrganizacaoID, EstacionamentoID } = req.body;
 
   if (typeof ID !== "string" || !formatoID.test(ID)) {
     return sendResponse(res, badRequest("ID inválido. Use letras, números e hífens."));
@@ -110,6 +110,8 @@ router.post("/", upload.single("Imagem"), async (req, res) => {
     Imagem,
     Largura,
     Altura,
+    OrganizacaoID: typeof OrganizacaoID === "string" ? OrganizacaoID.trim() : "",
+    EstacionamentoID: typeof EstacionamentoID === "string" ? EstacionamentoID.trim() : "",
     Vagas: []
   };
 
@@ -357,4 +359,4 @@ router.post("/:ID/analisar", upload.single("Imagem"), async (req, res) => {
   }
 });
 
-export default router;  
+export default router;
